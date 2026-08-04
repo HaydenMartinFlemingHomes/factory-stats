@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Panel Stats — Platform 1 · Fleming Homes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #f0efe9;
+  --border: #e2e0d8;
+  --border-strong: #c8c6bc;
+  --text: #1a1917;
+  --text-2: #6b6960;
+  --text-3: #9b9a94;
+  --accent: #1a1917;
+  --accent-text: #ffffff;
+  --teal: #0d6b5e;
+  --teal-bg: #e6f4f1;
+  --teal-text: #0a5449;
+  --amber: #92580a;
+  --amber-bg: #fef3e2;
+  --amber-text: #7a4a08;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --red-text: #a93226;
+  --green: #1a7a4a;
+  --green-bg: #e8f5ee;
+  --green-text: #156138;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.topbar {
+  background: var(--text);
+  color: #fff;
+  padding: 0 2rem;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-brand { display: flex; align-items: center; gap: 12px; }
+.topbar-logo {
+  width: 28px; height: 28px;
+  background: #fff;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+.topbar-logo svg { width: 16px; height: 16px; }
+.topbar-name { font-size: 14px; font-weight: 600; letter-spacing: -0.01em; }
+.topbar-sub { font-size: 12px; color: rgba(255,255,255,0.5); margin-left: 8px; }
+.topbar-actions { display: flex; gap: 8px; align-items: center; }
+.layout { display: flex; height: calc(100vh - 52px); }
+.sidebar {
+  width: 220px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 0;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-section { padding: 0 1rem; margin-bottom: 1.5rem; }
+.sidebar-label { font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; padding: 0 .5rem; }
+.nav-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 400;
+  transition: all .15s;
+  border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: var(--bg); color: var(--text); }
+.nav-item.active { background: var(--text); color: #fff; font-weight: 500; }
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: .7; }
+.nav-item.active svg { opacity: 1; }
+.sidebar-footer { margin-top: auto; padding: 1rem; border-top: 1px solid var(--border); }
+.sidebar-stat { font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+.sidebar-stat span { color: var(--text); font-weight: 500; font-family: 'DM Mono', monospace; }
+.main { flex: 1; overflow-y: auto; padding: 2rem; }
+.page { display: none; }
+.page.active { display: block; }
+.page-header { margin-bottom: 1.5rem; }
+.page-title { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); }
+.page-sub { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 10px; font-weight: 600; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 1rem;
+}
+.stage-head {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: .875rem;
+  padding-bottom: .625rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: .875rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .875rem; }
+.grid-3b { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .875rem; }
+.grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: .875rem; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 11px; font-weight: 500; color: var(--text-2); }
+input[type=text], input[type=number], input[type=date], input[type=time], textarea, select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  width: 100%;
+  transition: border-color .15s;
+}
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: var(--text);
+  background: #fff;
+}
+textarea { resize: vertical; }
+.toggle-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 10px; cursor: pointer;
+  font-size: 12px; color: var(--text-2);
+}
+.toggle-row input[type=checkbox] { width: auto; accent-color: var(--text); }
+.ot-panel {
+  margin-top: .875rem;
+  padding: 1rem;
+  background: var(--amber-bg);
+  border: 1px solid #f0d090;
+  border-radius: var(--radius-sm);
+}
+.ot-panel-title {
+  font-size: 11px; font-weight: 600; color: var(--amber-text);
+  text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: .75rem;
+}
+.stats-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.pill {
+  font-size: 11px; padding: 3px 10px;
+  border-radius: 100px;
+  background: var(--surface2);
+  color: var(--text-2);
+  font-family: 'DM Mono', monospace;
+}
+.pill b { color: var(--text); font-weight: 500; }
+.pill.teal { background: var(--teal-bg); color: var(--teal-text); }
+.pill.teal b { color: var(--teal); }
+.pill.amber { background: var(--amber-bg); color: var(--amber-text); }
+.pill.amber b { color: var(--amber); }
+.pill.warn { background: var(--red-bg); color: var(--red-text); font-family: 'DM Sans', sans-serif; }
+.btn {
+  padding: 8px 16px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+  cursor: pointer; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text);
+  transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { background: var(--bg); border-color: var(--border-strong); }
+.btn-dark { background: var(--text); color: #fff; border-color: var(--text); }
+.btn-dark:hover { opacity: .88; background: var(--text); }
+.btn-red { color: var(--red); border-color: #f0c0bb; }
+.btn-red:hover { background: var(--red-bg); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1.25rem; }
+.alert {
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; margin-bottom: 1rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.alert-success { background: var(--green-bg); color: var(--green-text); border: 1px solid #b0dfc0; }
+.alert-error { background: var(--red-bg); color: var(--red-text); border: 1px solid #f0c0bb; }
+.proj-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: .625rem;
+  display: flex; align-items: center; gap: 1rem;
+  box-shadow: var(--shadow);
+  transition: border-color .15s;
+}
+.proj-card:hover { border-color: var(--border-strong); }
+.proj-ref {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  color: var(--text-3);
+  background: var(--surface2);
+  padding: 2px 8px; border-radius: 4px;
+  flex-shrink: 0;
+}
+.proj-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.proj-meta { font-size: 12px; color: var(--text-2); margin-top: 1px; }
+.badge {
+  font-size: 10px; font-weight: 600; padding: 2px 7px;
+  border-radius: 100px; flex-shrink: 0;
+}
+.badge-ot { background: var(--amber-bg); color: var(--amber-text); }
+.metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); }
+.metric-label { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+.metric-value { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; font-family: 'DM Mono', monospace; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { text-align: left; padding: 8px 10px; font-size: 10px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .06em; border-bottom: 1px solid var(--border); }
+.tbl td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--bg); }
+.empty { text-align: center; padding: 3rem 1rem; color: var(--text-3); font-size: 13px; }
+.empty svg { width: 32px; height: 32px; margin: 0 auto .75rem; display: block; opacity: .4; }
+.diff-pos { color: var(--red); font-weight: 600; }
+.diff-neg { color: var(--green); font-weight: 600; }
+.divider { height: 1px; background: var(--border); margin: .875rem 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo">
+      <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="1" y="7" width="14" height="8" rx="1" fill="#1a1917"/>
+        <path d="M1 8L8 2L15 8" stroke="#1a1917" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <span class="topbar-name">Fleming Homes</span>
+    <span class="topbar-sub">Factory Panel Stats · Platform 1</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-sm" onclick="exportExcel()" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export Excel
+    </button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Navigation</div>
+      <button class="nav-item active" onclick="showPage('entry',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Data entry
+      </button>
+      <button class="nav-item" onclick="showPage('projects',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+        Projects
+      </button>
+      <button class="nav-item" onclick="showPage('summary',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Summary stats
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div class="sidebar-stat">Projects saved: <span id="sb-count">0</span></div>
+      <div class="sidebar-stat"><span id="sb-breakdown" style="color:var(--text-3);font-size:11px"></span></div>
+      <div class="sidebar-stat">Day rate: <span>445 mins</span></div>
+      <div id="sync-status" style="margin-top:8px;font-size:10px;color:var(--text-3)">Connecting to Supabase...</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="alert-area"></div>
+
+    <!-- ENTRY PAGE -->
+    <div id="page-entry" class="page active">
+      <div class="page-header">
+        <div class="page-title">New project entry</div>
+        <div class="page-sub">Record start/end times for each manufacturing stage</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Project info</div>
+        <div class="grid-3">
+          <div class="field"><label>Project name & number</label><input type="text" id="proj-name" placeholder="e.g. BURNS 2329"></div>
+          <div class="field"><label>Project ref</label><input type="text" id="proj-ref" placeholder="e.g. 06.09"></div>
+          <div class="field"><label>Budgeted days on line</label><input type="number" id="proj-budget" placeholder="4.50" step="0.25"></div>
+        </div>
+        <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem">
+          <span style="font-size:11px;font-weight:500;color:var(--text-2)">Project type</span>
+          <div style="display:flex;gap:6px">
+            <label id="type-std-label" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--text);background:var(--text);color:#fff;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s">
+              <input type="radio" name="proj-type" id="proj-type-std" value="standard" checked style="width:auto;accent-color:#fff"> Standard
+            </label>
+            <label id="type-ifb-label" style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s">
+              <input type="radio" name="proj-type" id="proj-type-ifb" value="ifb" style="width:auto;accent-color:var(--teal)"> IFB
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div id="stages-container"></div>
+
+      <div class="card">
+        <div class="card-title">Notes</div>
+        <div class="field"><textarea id="proj-notes" rows="2" placeholder="Any notes for this project..."></textarea></div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-red" onclick="clearForm()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          Clear
+        </button>
+        <button class="btn" onclick="loadDemo()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Load demo
+        </button>
+        <button class="btn btn-dark" onclick="saveProject()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Save project
+        </button>
+      </div>
+    </div>
+
+    <!-- PROJECTS PAGE -->
+    <div id="page-projects" class="page">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <div class="page-title">Projects</div>
+          <div class="page-sub" id="proj-count-label">No projects saved yet</div>
+        </div>
+        <button class="btn btn-dark" onclick="exportExcel()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export to Excel
+        </button>
+      </div>
+      <div id="projects-list"></div>
+    </div>
+
+    <!-- SUMMARY PAGE -->
+    <div id="page-summary" class="page">
+      <div class="page-header">
+        <div class="page-title">Summary stats</div>
+        <div class="page-sub">Averages across all saved projects · Day rate: 445 productive mins</div>
+      </div>
+      <div id="summary-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Supabase config ───────────────────────────────────────────────────
+const SB_URL = "https://rbswisdemhybyrsujqcx.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJic3dpc2RlbWh5Ynlyc3VqcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NDY4NjMsImV4cCI6MjEwMTQyMjg2M30.jfuldsSPT0f896oVu0CW10cXMohdUu3e95vsnoadmfQ";
+const SB_HEADERS = {
+  "Content-Type": "application/json",
+  "apikey": SB_KEY,
+  "Authorization": "Bearer " + SB_KEY,
+  "Prefer": "return=representation"
+};
+
+async function sbFetch(path, opts) {
+  const res = await fetch(SB_URL + "/rest/v1/" + path, { headers: SB_HEADERS, ...opts });
+  if (!res.ok) { const t = await res.text(); throw new Error(res.status + ": " + t); }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+async function loadProjects() {
+  setSyncStatus("Syncing...", "#92580a");
+  try {
+    const rows = await sbFetch("fh_projects?order=saved_at.asc");
+    projects = rows.map(r => ({ ...r.data, id: r.id, savedAt: r.saved_at }));
+    setSyncStatus("Synced • Supabase", "#1a7a4a");
+    // Migrate any local-only projects to Supabase then clear local
+    await migrateLocalData();
+  } catch(e) {
+    setSyncStatus("Offline — local only", "#c0392b");
+    console.warn("Supabase load failed:", e);
+    // Fall back to local storage
+    try { projects = JSON.parse(localStorage.getItem("fh_v4") || "[]"); } catch(_){}
+  }
+  updateSidebarCount();
+  renderProjects();
+  renderSummary();
+}
+
+async function migrateLocalData() {
+  const local = JSON.parse(localStorage.getItem("fh_v4") || "[]");
+  if (!local.length) return;
+  // Check which local IDs are not already in Supabase
+  const sbIds = projects.map(p => String(p.id));
+  const toMigrate = local.filter(p => !sbIds.includes(String(p.id)));
+  if (!toMigrate.length) { localStorage.removeItem("fh_v4"); return; }
+  for (const p of toMigrate) {
+    const { id, savedAt, ...data } = p;
+    await sbFetch("fh_projects", {
+      method: "POST",
+      body: JSON.stringify({ id: Number(id), data: { ...data, id: Number(id) }, saved_at: savedAt || new Date().toISOString() })
+    });
+  }
+  // Reload after migration
+  const rows = await sbFetch("fh_projects?order=saved_at.asc");
+  projects = rows.map(r => ({ ...r.data, id: r.id, savedAt: r.saved_at }));
+  localStorage.removeItem("fh_v4");
+  setSyncStatus("Migrated & synced • Supabase", "#1a7a4a");
+}
+
+async function persistProject(proj) {
+  const { id, savedAt, ...data } = proj;
+  try {
+    await sbFetch("fh_projects", {
+      method: "POST",
+      body: JSON.stringify({ id: Number(id), data: { ...data, id: Number(id) }, saved_at: savedAt })
+    });
+    setSyncStatus("Saved • Supabase", "#1a7a4a");
+  } catch(e) {
+    // Fallback: save to local storage
+    localStorage.setItem("fh_v4", JSON.stringify(projects));
+    setSyncStatus("Saved locally (Supabase offline)", "#c0392b");
+    console.warn("Supabase save failed:", e);
+  }
+}
+
+async function deleteProjectRemote(id) {
+  try {
+    await sbFetch("fh_projects?id=eq." + Number(id), { method: "DELETE" });
+    setSyncStatus("Deleted • Supabase", "#1a7a4a");
+  } catch(e) {
+    localStorage.setItem("fh_v4", JSON.stringify(projects));
+    setSyncStatus("Deleted locally (Supabase offline)", "#c0392b");
+  }
+}
+
+function setSyncStatus(msg, col) {
+  const el = document.getElementById("sync-status");
+  if (el) { el.textContent = msg; el.style.color = col; }
+}
+// ── End Supabase ──────────────────────────────────────────────────────
+
+const PROD_DAY = 445;
+const MON_THU_BREAKS = [{s:'10:00',e:'10:30'},{s:'12:00',e:'12:30'},{s:'15:00',e:'15:15'}];
+const FRI_BREAKS = [{s:'10:00',e:'10:15'}];
+
+function toMins(t){ const[h,m]=t.split(':').map(Number); return h*60+m; }
+
+function breakDeduction(dow, startM, endM){
+  const breaks = dow===5 ? FRI_BREAKS : (dow>=1&&dow<=4 ? MON_THU_BREAKS : []);
+  return breaks.reduce((acc,b)=>{
+    const os=Math.max(toMins(b.s),startM), oe=Math.min(toMins(b.e),endM);
+    return acc+(oe>os?oe-os:0);
+  },0);
+}
+
+function calcStdProdMins(sd,st,ed,et){
+  if(!sd||!st||!ed||!et) return null;
+  const start=new Date(sd+'T'+st), end=new Date(ed+'T'+et);
+  if(end<=start) return null;
+  let prod=0, cursor=new Date(start);
+  while(cursor<end){
+    const dow=cursor.getDay();
+    if(dow===0||dow===6){ cursor.setDate(cursor.getDate()+1); cursor.setHours(8,0,0,0); continue; }
+    const shiftEnd=dow===5?'12:30':'17:00';
+    const[sh,sm]=shiftEnd.split(':').map(Number);
+    const dayEnd=new Date(cursor); dayEnd.setHours(sh,sm,0,0);
+    const dayStart=new Date(cursor); dayStart.setHours(8,0,0,0);
+    const sliceStart=cursor<dayStart?dayStart:cursor;
+    const sliceEnd=end<dayEnd?end:dayEnd;
+    if(sliceEnd>sliceStart){
+      const gross=(sliceEnd-sliceStart)/60000;
+      const sM=sliceStart.getHours()*60+sliceStart.getMinutes();
+      const eM=sliceEnd.getHours()*60+sliceEnd.getMinutes();
+      prod+=gross-breakDeduction(dow,sM,eM);
+    }
+    cursor=new Date(dayEnd); cursor.setDate(cursor.getDate()+1); cursor.setHours(8,0,0,0);
+  }
+  return Math.round(prod);
+}
+
+function calcGross(sd,st,ed,et){
+  if(!sd||!st||!ed||!et) return null;
+  const start=new Date(sd+'T'+st), end=new Date(ed+'T'+et);
+  if(end<=start) return null;
+  return Math.round((end-start)/60000);
+}
+
+function fH(m){ return (m/60).toFixed(2); }
+function fD(m){ return (m/PROD_DAY).toFixed(2); }
+
+// Convert DD, MM, YY fields to YYYY-MM-DD string (returns null if incomplete)
+function getDateISO(d, m, y) {
+  if(!d || !m || !y) return null;
+  const dd = String(d).padStart(2,'0');
+  const mm = String(m).padStart(2,'0');
+  const yyyy = '20' + String(y).padStart(2,'0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+// Read the three split fields for a given base id (e.g. 'cut-ext-sd')
+function readDate(baseId) {
+  const d = document.getElementById(baseId+'-d');
+  const m = document.getElementById(baseId+'-m');
+  const y = document.getElementById(baseId+'-y');
+  if(!d||!m||!y) return null;
+  return getDateISO(d.value, m.value, y.value);
+}
+
+// Write a YYYY-MM-DD string back into the three split fields
+function writeDate(baseId, isoStr) {
+  if(!isoStr) return;
+  const parts = isoStr.split('-');
+  if(parts.length !== 3) return;
+  const yy = parts[0].slice(2); // strip '20'
+  const el_d = document.getElementById(baseId+'-d');
+  const el_m = document.getElementById(baseId+'-m');
+  const el_y = document.getElementById(baseId+'-y');
+  if(el_d) el_d.value = parseInt(parts[2]);
+  if(el_m) el_m.value = parseInt(parts[1]);
+  if(el_y) el_y.value = parseInt(yy);
+}
+
+const STAGES=[
+  {id:'cut-ext',label:'Cutting — externals',unit:'Total LM'},
+  {id:'cut-int',label:'Cutting — internals',unit:'Total LM'},
+  {id:'osb',label:'OSB & PIR',unit:'Total panels'},
+  {id:'sub',label:'Sub-assembly',unit:'Total subs'},
+  {id:'ext-panels',label:'External panels (bench line & stage bench)',unit:'Total panels'},
+  {id:'int-panels',label:'Internal panels',unit:'Total panels'},
+];
+
+let projects=[];
+try{ projects=JSON.parse(localStorage.getItem('fh_v4')||'[]'); }catch(e){}
+
+function buildStages(){
+  const c=document.getElementById('stages-container');
+  STAGES.forEach(s=>{
+    const div=document.createElement('div');
+    div.className='card';
+    div.innerHTML=`
+      <div class="stage-head">${s.label}</div>
+      <div id="body-${s.id}">
+        <div class="grid-3b">
+          <div class="field"><label>${s.unit}</label><input type="number" id="${s.id}-qty" placeholder="0" min="0" step="1"></div>
+          <div></div><div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem;margin-top:.75rem">
+          <div class="field">
+            <label>Start date</label>
+            <div style="display:grid;grid-template-columns:2fr 2fr 1.4fr;gap:4px;align-items:center">
+              <input type="number" id="${s.id}-sd-d" placeholder="DD" min="1" max="31" style="text-align:center" oninput="recalc('${s.id}')">
+              <input type="number" id="${s.id}-sd-m" placeholder="MM" min="1" max="12" style="text-align:center" oninput="recalc('${s.id}')">
+              <input type="number" id="${s.id}-sd-y" placeholder="YY" min="0" max="99" style="text-align:center" oninput="recalc('${s.id}')">
+            </div>
+          </div>
+          <div class="field"><label>Start time</label><input type="time" id="${s.id}-st" value="08:00" onchange="recalc('${s.id}')"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem;margin-top:.625rem">
+          <div class="field">
+            <label>End date</label>
+            <div style="display:grid;grid-template-columns:2fr 2fr 1.4fr;gap:4px;align-items:center">
+              <input type="number" id="${s.id}-ed-d" placeholder="DD" min="1" max="31" style="text-align:center" oninput="recalc('${s.id}')">
+              <input type="number" id="${s.id}-ed-m" placeholder="MM" min="1" max="12" style="text-align:center" oninput="recalc('${s.id}')">
+              <input type="number" id="${s.id}-ed-y" placeholder="YY" min="0" max="99" style="text-align:center" oninput="recalc('${s.id}')">
+            </div>
+          </div>
+          <div class="field"><label>End time</label><input type="time" id="${s.id}-et" value="17:00" onchange="recalc('${s.id}')"></div>
+        </div>
+        <label class="toggle-row">
+          <input type="checkbox" id="${s.id}-ot-on" onchange="toggleOT('${s.id}')">
+          Overtime was worked during this stage
+        </label>
+        <div id="${s.id}-ot-panel" style="display:none;margin-top:.75rem">
+          <div class="ot-panel">
+            <div class="ot-panel-title">⏱ Overtime session</div>
+            <div class="grid-4">
+              <div class="field">
+                <label>Date</label>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+                  <input type="number" id="${s.id}-otd-d" placeholder="DD" min="1" max="31" style="text-align:center" oninput="recalc('${s.id}')">
+                  <input type="number" id="${s.id}-otd-m" placeholder="MM" min="1" max="12" style="text-align:center" oninput="recalc('${s.id}')">
+                  <input type="number" id="${s.id}-otd-y" placeholder="YY" min="0" max="99" style="text-align:center" oninput="recalc('${s.id}')">
+                </div>
+              </div>
+              <div class="field"><label>Start time</label><input type="time" id="${s.id}-ots" value="17:00" onchange="recalc('${s.id}')"></div>
+              <div class="field"><label>End time</label><input type="time" id="${s.id}-ote" value="20:00" onchange="recalc('${s.id}')"></div>
+              <div class="field"><label>Breaks (mins)</label><input type="number" id="${s.id}-otb" placeholder="0" min="0" step="5" onchange="recalc('${s.id}')"></div>
+            </div>
+          </div>
+        </div>
+        <div id="${s.id}-stats" class="stats-row"></div>
+      </div>
+      <label class="toggle-row" style="margin-top:.625rem">
+        <input type="checkbox" id="${s.id}-na" onchange="toggleNA('${s.id}')">
+        Mark as N/A (not applicable for this project)
+      </label>`;
+    c.appendChild(div);
+  });
+}
+
+function updateTypeToggle(){
+  const isIFB = document.getElementById('proj-type-ifb').checked;
+  const stdL = document.getElementById('type-std-label');
+  const ifbL = document.getElementById('type-ifb-label');
+  stdL.style.background = isIFB ? 'var(--surface)' : 'var(--text)';
+  stdL.style.color = isIFB ? 'var(--text-2)' : '#fff';
+  stdL.style.borderColor = isIFB ? 'var(--border)' : 'var(--text)';
+  ifbL.style.background = isIFB ? 'var(--teal-bg)' : 'var(--surface)';
+  ifbL.style.color = isIFB ? 'var(--teal)' : 'var(--text-2)';
+  ifbL.style.borderColor = isIFB ? 'var(--teal)' : 'var(--border)';
+}
+
+function toggleNA(id){
+  const na=document.getElementById(id+'-na').checked;
+  const b=document.getElementById('body-'+id);
+  b.style.opacity=na?'0.3':'1';
+  b.style.pointerEvents=na?'none':'';
+  document.getElementById(id+'-stats').innerHTML='';
+}
+
+function toggleOT(id){
+  const on=document.getElementById(id+'-ot-on').checked;
+  document.getElementById(id+'-ot-panel').style.display=on?'block':'none';
+  recalc(id);
+}
+
+function recalc(id){
+  const sd=readDate(id+'-sd');
+  const st=document.getElementById(id+'-st').value;
+  const ed=readDate(id+'-ed');
+  const et=document.getElementById(id+'-et').value;
+  const el=document.getElementById(id+'-stats');
+  const otOn=document.getElementById(id+'-ot-on').checked;
+
+  let stdGross=null, stdProd=null, stdBreaks=null;
+  if(sd&&st&&ed&&et){
+    stdGross=calcGross(sd,st,ed,et);
+    if(stdGross&&stdGross>0){
+      stdProd=calcStdProdMins(sd,st,ed,et);
+      stdBreaks=stdGross-stdProd;
+    }
+  }
+
+  let otProd=null, otGross=null;
+  if(otOn){
+    const otd=readDate(id+'-otd');
+    const ots=document.getElementById(id+'-ots').value;
+    const ote=document.getElementById(id+'-ote').value;
+    const otb=parseInt(document.getElementById(id+'-otb').value)||0;
+    if(otd&&ots&&ote){
+      otGross=calcGross(otd,ots,otd,ote);
+      if(otGross&&otGross>0) otProd=Math.max(0,otGross-otb);
+    }
+  }
+
+  if(stdGross&&stdGross<=0){ el.innerHTML='<span class="pill warn">End must be after start</span>'; return; }
+  if(!stdProd&&!otProd){ el.innerHTML=''; return; }
+
+  const total=(stdProd||0)+(otProd||0);
+  let html='';
+  if(stdProd!==null) html+=`<span class="pill">Std: <b>${stdProd} mins</b> (${stdBreaks} break mins deducted)</span>`;
+  if(otProd!==null) html+=`<span class="pill amber">OT: <b>+${otProd} mins</b></span>`;
+  html+=`<span class="pill teal">Total productive: <b>${total} mins · ${fH(total)} hrs · ${fD(total)} days</b></span>`;
+  el.innerHTML=html;
+}
+
+function getStageData(id){
+  const na=document.getElementById(id+'-na').checked;
+  if(na) return{na:true};
+  const sd=readDate(id+'-sd');
+  const st=document.getElementById(id+'-st').value;
+  const ed=readDate(id+'-ed');
+  const et=document.getElementById(id+'-et').value;
+  const qty=parseFloat(document.getElementById(id+'-qty').value)||0;
+  const otOn=document.getElementById(id+'-ot-on').checked;
+  const stdGross=calcGross(sd,st,ed,et);
+  const stdProd=calcStdProdMins(sd,st,ed,et);
+  const stdBreaks=stdGross!==null&&stdProd!==null?stdGross-stdProd:null;
+  let otGross=null,otBreaks=null,otProd=null,otDate='',otStart='',otEnd='';
+  if(otOn){
+    otDate=readDate(id+'-otd');
+    otStart=document.getElementById(id+'-ots').value;
+    otEnd=document.getElementById(id+'-ote').value;
+    otBreaks=parseInt(document.getElementById(id+'-otb').value)||0;
+    otGross=calcGross(otDate,otStart,otDate,otEnd);
+    if(otGross) otProd=Math.max(0,otGross-otBreaks);
+  }
+  const total=(stdProd||0)+(otProd||0);
+  return{
+    na:false,qty,startDate:sd,startTime:st,endDate:ed,endTime:et,
+    stdGrossMins:stdGross,stdBreakMins:stdBreaks,stdProdMins:stdProd,
+    otOn,otDate,otStart,otEnd,otGrossMins:otGross,otBreakMins:otBreaks,otProdMins:otProd,
+    totalProdMins:total>0?total:null,
+    totalProdHrs:total>0?parseFloat(fH(total)):null,
+    totalProdDays:total>0?parseFloat(fD(total)):null,
+  };
+}
+
+async function saveProject(){
+  const name=document.getElementById('proj-name').value.trim();
+  if(!name){ showAlert('Please enter a project name.','error'); return; }
+  const stages={};
+  STAGES.forEach(s=>{ stages[s.id]=getStageData(s.id); });
+  const proj={
+    id:Date.now(), name,
+    ref:document.getElementById('proj-ref').value.trim(),
+    budget:parseFloat(document.getElementById('proj-budget').value)||null,
+    type: document.getElementById('proj-type-ifb').checked ? 'ifb' : 'standard',
+    notes:document.getElementById('proj-notes').value,
+    stages, savedAt:new Date().toISOString()
+  };
+  projects.push(proj);
+  setSyncStatus('Saving...', '#92580a');
+  await persistProject(proj);
+  showAlert('Project "'+name+'" saved successfully.','success');
+  updateSidebarCount();
+  renderProjects();
+  renderSummary();
+  clearForm();
+}
+
+function persist(){ /* data persisted to Supabase */ }
+function updateSidebarCount(){
+  const std=projects.filter(p=>!p.type||p.type==='standard').length;
+  const ifb=projects.filter(p=>p.type==='ifb').length;
+  document.getElementById('sb-count').textContent=projects.length;
+  const breakdown=document.getElementById('sb-breakdown');
+  if(breakdown) breakdown.textContent=std+' std · '+ifb+' IFB';
+}
+
+async function deleteProject(id){
+  if(!confirm('Delete this project? This cannot be undone.')) return;
+  projects=projects.filter(p=>p.id!==id);
+  await deleteProjectRemote(id);
+  updateSidebarCount(); renderProjects(); renderSummary();
+}
+
+function clearForm(){
+  ['proj-name','proj-ref','proj-budget','proj-notes'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('proj-type-std').checked=true;
+  updateTypeToggle();
+  STAGES.forEach(s=>{
+    document.getElementById(s.id+'-qty').value='';
+    ['sd','ed'].forEach(p=>{
+      ['d','m','y'].forEach(f=>{ const el=document.getElementById(s.id+'-'+p+'-'+f); if(el) el.value=''; });
+    });
+    document.getElementById(s.id+'-st').value='08:00';
+    document.getElementById(s.id+'-et').value='17:00';
+    document.getElementById(s.id+'-na').checked=false;
+    document.getElementById(s.id+'-ot-on').checked=false;
+    document.getElementById(s.id+'-ot-panel').style.display='none';
+    ['d','m','y'].forEach(f=>{ const el=document.getElementById(s.id+'-otd-'+f); if(el) el.value=''; });
+    document.getElementById(s.id+'-ots').value='17:00';
+    document.getElementById(s.id+'-ote').value='20:00';
+    document.getElementById(s.id+'-otb').value='';
+    document.getElementById(s.id+'-stats').innerHTML='';
+    toggleNA(s.id);
+  });
+}
+
+function loadDemo(){
+  document.getElementById('proj-name').value='DEMO PROJECT 2400';
+  document.getElementById('proj-ref').value='06.09';
+  document.getElementById('proj-budget').value='4.50';
+
+  const d={
+    'cut-ext':{qty:1500,sd:'2026-05-04',st:'08:00',ed:'2026-05-06',et:'12:00',otOn:true,otd:'2026-05-06',ots:'17:00',ote:'19:30',otb:0},
+    'cut-int':{qty:800,sd:'2026-05-04',st:'13:00',ed:'2026-05-05',et:'17:00'},
+    'osb':{qty:50,sd:'2026-05-05',st:'08:00',ed:'2026-05-07',et:'11:00'},
+    'sub':{qty:22,sd:'2026-05-06',st:'09:00',ed:'2026-05-08',et:'15:00'},
+    'ext-panels':{qty:47,sd:'2026-05-09',st:'08:00',ed:'2026-05-13',et:'17:00'},
+    'int-panels':{qty:48,sd:'2026-05-07',st:'08:00',ed:'2026-05-09',et:'12:30'},
+  };
+  Object.entries(d).forEach(([id,v])=>{
+    document.getElementById(id+'-qty').value=v.qty;
+    writeDate(id+'-sd', v.sd);
+    document.getElementById(id+'-st').value=v.st;
+    writeDate(id+'-ed', v.ed);
+    document.getElementById(id+'-et').value=v.et;
+    document.getElementById(id+'-na').checked=false;
+    if(v.otOn){
+      document.getElementById(id+'-ot-on').checked=true;
+      document.getElementById(id+'-ot-panel').style.display='block';
+      writeDate(id+'-otd', v.otd);
+      document.getElementById(id+'-ots').value=v.ots;
+      document.getElementById(id+'-ote').value=v.ote;
+      document.getElementById(id+'-otb').value=v.otb;
+    }
+    toggleNA(id); recalc(id);
+  });
+}
+
+function projCard(p){
+    const ep=p.stages['ext-panels'];
+    const ip=p.stages['int-panels'];
+    const epD=ep&&!ep.na&&ep.totalProdDays?ep.totalProdDays:null;
+    const ipD=ip&&!ip.na&&ip.totalProdDays?ip.totalProdDays.toFixed(2):'—';
+    const hasOT=STAGES.some(s=>p.stages[s.id]&&p.stages[s.id].otOn);
+    let diffHtml='';
+    if(p.budget&&epD!==null){
+      const diff=parseFloat((epD-p.budget).toFixed(2));
+      const sign=diff>0?'+':'';
+      const col=diff>0?'var(--red)':diff<0?'var(--green)':'var(--text-2)';
+      const abs=Math.abs(diff);
+      const label=diff>0?abs+' days over budget':diff<0?abs+' days under budget':'On budget';
+      diffHtml=`<span style="display:inline-block;margin-top:3px;font-size:12px;font-weight:600;color:${col}">${sign}${diff} days vs budget &mdash; ${label}</span>`;
+    }
+    return`<div class="proj-card">
+      ${p.ref?`<div class="proj-ref">${p.ref}</div>`:''}
+      <div style="flex:1">
+        <div class="proj-name">${p.name}</div>
+        <div class="proj-meta">Ext panels: ${epD!==null?epD.toFixed(2):'—'} days &nbsp;&middot;&nbsp; Int panels: ${ipD} days &nbsp;&middot;&nbsp; Budget: ${p.budget?p.budget+' days':'—'}</div>
+        ${diffHtml}
+      </div>
+      ${p.type==='ifb'?'<span class="badge" style="background:var(--teal-bg);color:var(--teal)">IFB</span>':''}
+      ${hasOT?'<span class="badge badge-ot">OT</span>':''}
+      <button class="btn btn-sm btn-red" onclick="deleteProject(${p.id})" title="Delete project">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+      </button>
+    </div>`;
+}
+
+function renderProjects(){
+  const list=document.getElementById('projects-list');
+  const label=document.getElementById('proj-count-label');
+  label.textContent=projects.length+' project'+(projects.length!==1?'s':'')+' saved';
+  if(!projects.length){
+    list.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>No projects yet. Add one in the data entry tab.</div>`;
+    return;
+  }
+  const std=projects.filter(p=>!p.type||p.type==='standard');
+  const ifb=projects.filter(p=>p.type==='ifb');
+  let html='';
+  if(std.length){
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;margin-top:.25rem">Standard projects (${std.length})</div>`;
+    html+=std.map(p=>projCard(p)).join('');
+  }
+  if(ifb.length){
+    html+=`<div style="font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;margin-top:1.25rem">IFB projects (${ifb.length})</div>`;
+    html+=ifb.map(p=>projCard(p)).join('');
+  }
+  list.innerHTML=html;
+}
+
+function avg(arr){ return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0; }
+
+function stageTableHtml(typeLabel, ss, proj) {
+  const isIFB = typeLabel === 'IFB';
+  const headerCol = isIFB ? 'var(--teal)' : 'var(--text)';
+  const bvProjects = proj.filter(p => p.budget && p.stages['ext-panels'] && !p.stages['ext-panels'].na && p.stages['ext-panels'].totalProdDays);
+  const bvDiffs = bvProjects.map(p => parseFloat((p.stages['ext-panels'].totalProdDays - p.budget).toFixed(2)));
+  const avgDiff = bvDiffs.length ? parseFloat((bvDiffs.reduce((a, b) => a + b, 0) / bvDiffs.length).toFixed(2)) : null;
+  const avgDiffCol = avgDiff === null ? 'var(--text)' : avgDiff > 0 ? 'var(--red)' : avgDiff < 0 ? 'var(--green)' : 'var(--text)';
+
+  let rowsHtml = ss.map(s => {
+    const isKey = s.id === 'ext-panels';
+    const rowStyle = isKey ? 'background:var(--teal-bg);' : '';
+    const cellStyle = isKey ? 'color:var(--teal);font-weight:700;font-size:15px;' : '';
+    const labelStyle = isKey ? 'font-weight:600;color:var(--teal-text);' : '';
+    return '<tr style="' + rowStyle + '">' +
+      '<td style="' + labelStyle + '">' + (isKey ? '&#9733; &nbsp;' : '') + s.label + '</td>' +
+      '<td>' + s.n + '</td>' +
+      '<td>' + (s.n ? Math.round(s.avgM) : '&mdash;') + '</td>' +
+      '<td>' + (s.n ? s.avgH.toFixed(2) : '&mdash;') + '</td>' +
+      '<td style="' + cellStyle + '">' + (s.n ? s.avgD.toFixed(2) : '&mdash;') + '</td>' +
+      '</tr>';
+  }).join('');
+
+  let bvHtml = '';
+  if (bvProjects.length) {
+    let bvRows = bvProjects.map(function(p, i) {
+      const diff = bvDiffs[i];
+      const sign = diff > 0 ? '+' : '';
+      const col = diff > 0 ? 'var(--red)' : diff < 0 ? 'var(--green)' : 'var(--text-2)';
+      return '<tr>' +
+        '<td>' + p.name + '</td>' +
+        '<td>' + p.budget + ' days</td>' +
+        '<td>' + p.stages['ext-panels'].totalProdDays.toFixed(2) + ' days</td>' +
+        '<td style="color:' + col + ';font-weight:600">' + sign + diff + '</td>' +
+        '<td style="color:' + col + '">' + (diff === 0 ? 'On budget' : diff > 0 ? 'Over' : 'Under') + '</td>' +
+        '</tr>';
+    }).join('');
+    const avgLabel = avgDiff === null ? '&mdash;' : (avgDiff > 0 ? 'Avg over budget' : avgDiff < 0 ? 'Avg under budget' : 'On budget');
+    const avgVal = avgDiff !== null ? (avgDiff > 0 ? '+' : '') + avgDiff : '';
+    bvRows += '<tr style="border-top:2px solid var(--border);font-weight:600">' +
+      '<td>Cumulative average</td><td>&mdash;</td><td>&mdash;</td>' +
+      '<td style="color:' + avgDiffCol + '">' + avgVal + '</td>' +
+      '<td style="color:' + avgDiffCol + '">' + avgLabel + '</td>' +
+      '</tr>';
+    bvHtml = '<div style="margin-top:1rem">' +
+      '<div class="card-title">Budget vs actual &mdash; external panels</div>' +
+      '<table class="tbl"><thead><tr>' +
+      '<th style="width:36%">Project</th><th>Budget</th><th>Actual (ext days)</th><th>Difference</th><th>Status</th>' +
+      '</tr></thead><tbody>' + bvRows + '</tbody></table></div>';
+  }
+
+  return '<div class="card" style="margin-bottom:1rem;border-top:3px solid ' + headerCol + '">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem">' +
+    '<span style="font-size:13px;font-weight:700;color:' + headerCol + ';text-transform:uppercase;letter-spacing:.06em">' + typeLabel + ' projects</span>' +
+    '<span style="font-size:12px;color:var(--text-3)">' + proj.length + ' project' + (proj.length !== 1 ? 's' : '') + '</span>' +
+    '</div>' +
+    '<div class="card-title">Average productive time per stage (inc. overtime)</div>' +
+    '<table class="tbl"><thead><tr>' +
+    '<th style="width:44%">Stage</th><th>n</th><th>Avg mins</th><th>Avg hrs</th><th>Avg days</th>' +
+    '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+    bvHtml +
+    '</div>';
+}
+
+function renderSummary() {
+  const el = document.getElementById('summary-content');
+  if (!projects.length) {
+    el.innerHTML = '<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Save at least one project to see stats.</div>';
+    return;
+  }
+  const stdProjects = projects.filter(p => !p.type || p.type === 'standard');
+  const ifbProjects = projects.filter(p => p.type === 'ifb');
+
+  function stageStats(proj) {
+    return STAGES.map(s => {
+      const vals = proj.map(p => p.stages[s.id]).filter(d => d && !d.na && d.totalProdMins !== null);
+      return {
+        id: s.id, label: s.label, n: vals.length,
+        avgM: avg(vals.map(d => d.totalProdMins)),
+        avgH: avg(vals.map(d => d.totalProdHrs)),
+        avgD: avg(vals.map(d => d.totalProdDays))
+      };
+    });
+  }
+
+  const tExt = projects.reduce((a, p) => a + (p.stages['cut-ext'] && !p.stages['cut-ext'].na ? p.stages['cut-ext'].qty || 0 : 0), 0);
+  const tInt = projects.reduce((a, p) => a + (p.stages['cut-int'] && !p.stages['cut-int'].na ? p.stages['cut-int'].qty || 0 : 0), 0);
+  const otCount = projects.filter(p => STAGES.some(s => p.stages[s.id] && p.stages[s.id].otOn)).length;
+
+  let html = '<div class="metric-grid">' +
+    '<div class="metric"><div class="metric-label">Total projects</div><div class="metric-value">' + projects.length + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Standard</div><div class="metric-value">' + stdProjects.length + '</div></div>' +
+    '<div class="metric"><div class="metric-label">IFB</div><div class="metric-value" style="color:var(--teal)">' + ifbProjects.length + '</div></div>' +
+    '<div class="metric"><div class="metric-label">With overtime</div><div class="metric-value">' + otCount + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Ext. LM cut</div><div class="metric-value">' + tExt.toLocaleString() + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Int. LM cut</div><div class="metric-value">' + tInt.toLocaleString() + '</div></div>' +
+    '</div>';
+
+  if (stdProjects.length) html += stageTableHtml('Standard', stageStats(stdProjects), stdProjects);
+  if (ifbProjects.length) html += stageTableHtml('IFB', stageStats(ifbProjects), ifbProjects);
+
+  el.innerHTML = html;
+}
+
+
+function dayName(ds){ if(!ds)return''; const d=new Date(ds+'T12:00'); return['SUN','MON','TUES','WED','THURS','FRI','SAT'][d.getDay()]; }
+function fmtDate(ds){ if(!ds)return''; const d=new Date(ds+'T12:00'); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function fmtTDec(t){ if(!t)return''; const[h,m]=t.split(':').map(Number); return parseFloat((h+m/60).toFixed(4)); }
+
+function exportExcel(){
+  if(!projects.length){ showAlert('No projects to export.','error'); return; }
+  const wb=XLSX.utils.book_new();
+  const ids=STAGES.map(s=>s.id);
+
+  projects.forEach(p=>{
+    const rows=[];
+    rows.push(['PROJECT:',p.name,'REF:',p.ref||'']);
+    rows.push(['Day rate: 445 productive mins (Mon–Thu less 75 mins breaks). Friday: 255 mins. Overtime: manual break entry.']);
+    rows.push([]);
+    const hdr=[];STAGES.forEach(s=>hdr.push(s.label.toUpperCase(),''));rows.push(hdr);
+    const fields=[
+      ['QUANTITY',d=>d.na?'N/A':d.qty??''],
+      ['START DATE',d=>d.na?'N/A':fmtDate(d.startDate)],
+      ['START DAY',d=>d.na?'N/A':dayName(d.startDate)],
+      ['TIME START',d=>d.na?'N/A':fmtTDec(d.startTime)],
+      ['END DATE',d=>d.na?'N/A':fmtDate(d.endDate)],
+      ['END DAY',d=>d.na?'N/A':dayName(d.endDate)],
+      ['TIME END',d=>d.na?'N/A':fmtTDec(d.endTime)],
+      ['STD GROSS MINS',d=>d.na?'N/A':d.stdGrossMins??''],
+      ['STD BREAKS DEDUCTED',d=>d.na?'N/A':d.stdBreakMins??''],
+      ['STD PRODUCTIVE MINS',d=>d.na?'N/A':d.stdProdMins??''],
+      ['OT PRODUCTIVE MINS',d=>d.na?'N/A':d.otOn&&d.otProdMins!=null?d.otProdMins:'—'],
+      ['TOTAL PRODUCTIVE MINS',d=>d.na?'N/A':d.totalProdMins??''],
+      ['TOTAL PRODUCTIVE HRS',d=>d.na?'N/A':d.totalProdHrs??''],
+      ['TOTAL PRODUCTIVE DAYS',d=>d.na?'N/A':d.totalProdDays??''],
+    ];
+    fields.forEach(([label,fn])=>{
+      const row=[];ids.forEach(id=>{ row.push(label,fn(p.stages[id])); });rows.push(row);
+    });
+    if(p.budget){ rows.push([],['BUDGETED DAYS',p.budget]); }
+    if(p.notes) rows.push([],['Notes:',p.notes]);
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=Array(14).fill({wch:24});
+    XLSX.utils.book_append_sheet(wb,ws,(p.ref?p.ref+' ':'')+p.name.substring(0,24));
+  });
+
+  const sumRows=[];
+  sumRows.push(['RUNNING STATISTICS — PLATFORM 1']);
+  sumRows.push(['Generated',new Date().toLocaleDateString('en-GB'),'Projects',projects.length]);
+  sumRows.push(['Productive day rate','445 mins','Break schedule','Mon–Thu: 75 mins · Fri: 15 mins']);
+  sumRows.push([]);
+  sumRows.push(['STAGE','METRIC',...projects.map(p=>p.ref||p.name),'AVERAGE']);
+  STAGES.forEach(s=>{
+    const metrics=[
+      {k:'qty',l:'Quantity'},{k:'stdGrossMins',l:'Std gross mins'},
+      {k:'stdBreakMins',l:'Std breaks deducted'},{k:'stdProdMins',l:'Std productive mins'},
+      {k:'otProdMins',l:'Overtime productive mins'},{k:'totalProdMins',l:'Total productive mins'},
+      {k:'totalProdHrs',l:'Total productive hrs'},{k:'totalProdDays',l:'Total productive days'},
+    ];
+    metrics.forEach((m,mi)=>{
+      const vals=projects.map(p=>{ const d=p.stages[s.id]; if(!d||d.na)return'N/A'; if(m.k==='otProdMins'&&!d.otOn)return'—'; const v=d[m.k]; return(v===null||v===undefined)?'':v; });
+      const nums=vals.filter(v=>typeof v==='number');
+      const av=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:null;
+      sumRows.push([mi===0?s.label:'',m.l,...vals,av!==null?(m.k==='totalProdDays'||m.k==='totalProdHrs'?parseFloat(av.toFixed(2)):Math.round(av)):'—']);
+    });
+    sumRows.push([]);
+  });
+  const ws2=XLSX.utils.aoa_to_sheet(sumRows);
+  ws2['!cols']=[{wch:38},{wch:28},...projects.map(()=>({wch:18})),{wch:14}];
+  XLSX.utils.book_append_sheet(wb,ws2,'Running Statistics');
+  XLSX.writeFile(wb,'Factory_Panel_Stats_P1_'+new Date().toISOString().split('T')[0]+'.xlsx');
+  showAlert('Excel exported successfully.','success');
+}
+
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='projects') renderProjects();
+  if(name==='summary') renderSummary();
+}
+
+function showAlert(msg,type){
+  const el=document.getElementById('alert-area');
+  el.innerHTML=`<div class="alert alert-${type}">${msg}</div>`;
+  setTimeout(()=>{ el.innerHTML=''; },4000);
+}
+
+
+buildStages();
+document.querySelectorAll('input[name="proj-type"]').forEach(r=>r.addEventListener('change', updateTypeToggle));
+// Load projects from Supabase on startup
+loadProjects();
+</script>
+</body>
+</html>
