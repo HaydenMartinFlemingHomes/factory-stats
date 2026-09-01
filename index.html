@@ -601,20 +601,12 @@ function buildStages(){
         </label>
         <div id="${s.id}-ot-panel" style="display:none;margin-top:.75rem">
           <div class="ot-panel">
-            <div class="ot-panel-title">⏱ Overtime session</div>
-            <div class="grid-4">
-              <div class="field">
-                <label>Date</label>
-                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
-                  <input type="number" id="${s.id}-otd-d" placeholder="DD" min="1" max="31" style="text-align:center" oninput="recalc('${s.id}')">
-                  <input type="number" id="${s.id}-otd-m" placeholder="MM" min="1" max="12" style="text-align:center" oninput="recalc('${s.id}')">
-                  <input type="number" id="${s.id}-otd-y" placeholder="YY" min="0" max="99" style="text-align:center" oninput="recalc('${s.id}')">
-                </div>
-              </div>
-              <div class="field"><label>Start time</label><input type="time" id="${s.id}-ots" value="17:00" onchange="recalc('${s.id}')"></div>
-              <div class="field"><label>End time</label><input type="time" id="${s.id}-ote" value="20:00" onchange="recalc('${s.id}')"></div>
-              <div class="field"><label>Breaks (mins)</label><input type="number" id="${s.id}-otb" placeholder="0" min="0" step="5" onchange="recalc('${s.id}')"></div>
-            </div>
+            <div class="ot-panel-title">⏱ Overtime sessions</div>
+            <div id="${s.id}-ot-sessions"></div>
+            <button type="button" class="btn btn-sm" onclick="addOTSession('${s.id}')" style="background:#fff;border-color:#f0d090;color:var(--amber-text)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add overtime session
+            </button>
           </div>
         </div>
         <div id="${s.id}-stats" class="stats-row"></div>
@@ -647,9 +639,72 @@ function toggleNA(id){
   document.getElementById(id+'-stats').innerHTML='';
 }
 
+const otCounters={};
+
+function otSessionHtml(stageId,uid){
+  return `<div class="ot-session" id="ot-${stageId}-${uid}" data-uid="${uid}" style="margin-bottom:.75rem;padding:.75rem;background:#fff;border:1px solid #f0d090;border-radius:var(--radius-sm)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+      <span style="font-size:10px;font-weight:600;color:var(--amber-text);text-transform:uppercase;letter-spacing:.05em">Session</span>
+      <button type="button" class="btn btn-sm btn-red" onclick="removeOTSession('${stageId}','${uid}')" title="Remove session" style="padding:2px 6px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="grid-4">
+      <div class="field">
+        <label>Date</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+          <input type="number" id="ot-${stageId}-${uid}-d" placeholder="DD" min="1" max="31" style="text-align:center" oninput="recalc('${stageId}')">
+          <input type="number" id="ot-${stageId}-${uid}-m" placeholder="MM" min="1" max="12" style="text-align:center" oninput="recalc('${stageId}')">
+          <input type="number" id="ot-${stageId}-${uid}-y" placeholder="YY" min="0" max="99" style="text-align:center" oninput="recalc('${stageId}')">
+        </div>
+      </div>
+      <div class="field"><label>Start time</label><input type="time" id="ot-${stageId}-${uid}-start" value="17:00" onchange="recalc('${stageId}')"></div>
+      <div class="field"><label>End time</label><input type="time" id="ot-${stageId}-${uid}-end" value="20:00" onchange="recalc('${stageId}')"></div>
+      <div class="field"><label>Breaks (mins)</label><input type="number" id="ot-${stageId}-${uid}-breaks" placeholder="0" min="0" step="5" onchange="recalc('${stageId}')"></div>
+    </div>
+  </div>`;
+}
+
+function addOTSession(stageId){
+  if(otCounters[stageId]===undefined) otCounters[stageId]=0;
+  const uid=otCounters[stageId]++;
+  const container=document.getElementById(stageId+'-ot-sessions');
+  const wrap=document.createElement('div');
+  wrap.innerHTML=otSessionHtml(stageId,uid);
+  container.appendChild(wrap.firstElementChild);
+  recalc(stageId);
+  return uid;
+}
+
+function removeOTSession(stageId,uid){
+  const el=document.getElementById(`ot-${stageId}-${uid}`);
+  if(el) el.remove();
+  recalc(stageId);
+}
+
+function getOTSessions(stageId){
+  const container=document.getElementById(stageId+'-ot-sessions');
+  if(!container) return[];
+  return[...container.children].map(row=>{
+    const uid=row.dataset.uid;
+    const base=`ot-${stageId}-${uid}`;
+    const date=readDate(base);
+    const start=document.getElementById(base+'-start').value;
+    const end=document.getElementById(base+'-end').value;
+    const breaks=parseInt(document.getElementById(base+'-breaks').value)||0;
+    const grossMins=(date&&start&&end)?calcGross(date,start,date,end):null;
+    const prodMins=(grossMins&&grossMins>0)?Math.max(0,grossMins-breaks):null;
+    return{uid,date,start,end,breaks,grossMins,prodMins};
+  });
+}
+
 function toggleOT(id){
   const on=document.getElementById(id+'-ot-on').checked;
   document.getElementById(id+'-ot-panel').style.display=on?'block':'none';
+  if(on){
+    const container=document.getElementById(id+'-ot-sessions');
+    if(container.children.length===0) addOTSession(id);
+  }
   recalc(id);
 }
 
@@ -670,15 +725,12 @@ function recalc(id){
     }
   }
 
-  let otProd=null, otGross=null;
+  let otProd=null, otSessionCount=0;
   if(otOn){
-    const otd=readDate(id+'-otd');
-    const ots=document.getElementById(id+'-ots').value;
-    const ote=document.getElementById(id+'-ote').value;
-    const otb=parseInt(document.getElementById(id+'-otb').value)||0;
-    if(otd&&ots&&ote){
-      otGross=calcGross(otd,ots,otd,ote);
-      if(otGross&&otGross>0) otProd=Math.max(0,otGross-otb);
+    const sessions=getOTSessions(id).filter(s=>s.grossMins&&s.grossMins>0);
+    if(sessions.length){
+      otProd=sessions.reduce((a,s)=>a+s.prodMins,0);
+      otSessionCount=sessions.length;
     }
   }
 
@@ -688,7 +740,7 @@ function recalc(id){
   const total=(stdProd||0)+(otProd||0);
   let html='';
   if(stdProd!==null) html+=`<span class="pill">Std: <b>${stdProd} mins</b> (${stdBreaks} break mins deducted)</span>`;
-  if(otProd!==null) html+=`<span class="pill amber">OT: <b>+${otProd} mins</b></span>`;
+  if(otProd!==null) html+=`<span class="pill amber">OT: <b>+${otProd} mins</b> (${otSessionCount} session${otSessionCount!==1?'s':''})</span>`;
   html+=`<span class="pill teal">Total productive: <b>${total} mins · ${fH(total)} hrs · ${fD(total)} days</b></span>`;
   el.innerHTML=html;
 }
@@ -705,20 +757,21 @@ function getStageData(id){
   const stdGross=calcGross(sd,st,ed,et);
   const stdProd=calcStdProdMins(sd,st,ed,et);
   const stdBreaks=stdGross!==null&&stdProd!==null?stdGross-stdProd:null;
-  let otGross=null,otBreaks=null,otProd=null,otDate='',otStart='',otEnd='';
+  let otGross=null,otBreaks=null,otProd=null,otSessions=[];
   if(otOn){
-    otDate=readDate(id+'-otd');
-    otStart=document.getElementById(id+'-ots').value;
-    otEnd=document.getElementById(id+'-ote').value;
-    otBreaks=parseInt(document.getElementById(id+'-otb').value)||0;
-    otGross=calcGross(otDate,otStart,otDate,otEnd);
-    if(otGross) otProd=Math.max(0,otGross-otBreaks);
+    const valid=getOTSessions(id).filter(s=>s.date&&s.start&&s.end&&s.grossMins&&s.grossMins>0);
+    otSessions=valid.map(s=>({date:s.date,start:s.start,end:s.end,breaks:s.breaks,grossMins:s.grossMins,prodMins:s.prodMins}));
+    if(otSessions.length){
+      otGross=otSessions.reduce((a,s)=>a+s.grossMins,0);
+      otBreaks=otSessions.reduce((a,s)=>a+s.breaks,0);
+      otProd=otSessions.reduce((a,s)=>a+s.prodMins,0);
+    }
   }
   const total=(stdProd||0)+(otProd||0);
   return{
     na:false,qty,startDate:sd,startTime:st,endDate:ed,endTime:et,
     stdGrossMins:stdGross,stdBreakMins:stdBreaks,stdProdMins:stdProd,
-    otOn,otDate,otStart,otEnd,otGrossMins:otGross,otBreakMins:otBreaks,otProdMins:otProd,
+    otOn,otSessions,otGrossMins:otGross,otBreakMins:otBreaks,otProdMins:otProd,
     totalProdMins:total>0?total:null,
     totalProdHrs:total>0?parseFloat(fH(total)):null,
     totalProdDays:total>0?parseFloat(fD(total)):null,
@@ -784,10 +837,8 @@ function clearForm(){
     document.getElementById(s.id+'-na').checked=false;
     document.getElementById(s.id+'-ot-on').checked=false;
     document.getElementById(s.id+'-ot-panel').style.display='none';
-    ['d','m','y'].forEach(f=>{ const el=document.getElementById(s.id+'-otd-'+f); if(el) el.value=''; });
-    document.getElementById(s.id+'-ots').value='17:00';
-    document.getElementById(s.id+'-ote').value='20:00';
-    document.getElementById(s.id+'-otb').value='';
+    document.getElementById(s.id+'-ot-sessions').innerHTML='';
+    otCounters[s.id]=0;
     document.getElementById(s.id+'-stats').innerHTML='';
     toggleNA(s.id);
   });
@@ -805,7 +856,10 @@ function loadDemo(){
   document.getElementById('proj-profit-lost').value='650';
 
   const d={
-    'cut-ext':{qty:1500,sd:'2026-05-04',st:'08:00',ed:'2026-05-06',et:'12:00',otOn:true,otd:'2026-05-06',ots:'17:00',ote:'19:30',otb:0},
+    'cut-ext':{qty:1500,sd:'2026-05-04',st:'08:00',ed:'2026-05-06',et:'12:00',otSessions:[
+      {d:'2026-05-04',start:'17:00',end:'19:00',breaks:0},
+      {d:'2026-05-06',start:'17:00',end:'19:30',breaks:15},
+    ]},
     'cut-int':{qty:800,sd:'2026-05-04',st:'13:00',ed:'2026-05-05',et:'17:00'},
     'osb':{qty:50,sd:'2026-05-05',st:'08:00',ed:'2026-05-07',et:'11:00'},
     'sub':{qty:22,sd:'2026-05-06',st:'09:00',ed:'2026-05-08',et:'15:00'},
@@ -819,13 +873,18 @@ function loadDemo(){
     writeDate(id+'-ed', v.ed);
     document.getElementById(id+'-et').value=v.et;
     document.getElementById(id+'-na').checked=false;
-    if(v.otOn){
+    if(v.otSessions&&v.otSessions.length){
       document.getElementById(id+'-ot-on').checked=true;
       document.getElementById(id+'-ot-panel').style.display='block';
-      writeDate(id+'-otd', v.otd);
-      document.getElementById(id+'-ots').value=v.ots;
-      document.getElementById(id+'-ote').value=v.ote;
-      document.getElementById(id+'-otb').value=v.otb;
+      document.getElementById(id+'-ot-sessions').innerHTML='';
+      otCounters[id]=0;
+      v.otSessions.forEach(sess=>{
+        const uid=addOTSession(id);
+        writeDate(`ot-${id}-${uid}`, sess.d);
+        document.getElementById(`ot-${id}-${uid}-start`).value=sess.start;
+        document.getElementById(`ot-${id}-${uid}-end`).value=sess.end;
+        document.getElementById(`ot-${id}-${uid}-breaks`).value=sess.breaks;
+      });
     }
     toggleNA(id); recalc(id);
   });
@@ -1060,6 +1119,19 @@ function exportExcel(){
     if(p.profitMade) commercialRows.push(['ADDITIONAL PROFIT MADE',p.profitMade]);
     if(p.profitLost) commercialRows.push(['ADDITIONAL PROFIT LOST',p.profitLost]);
     if(commercialRows.length) rows.push([],...commercialRows);
+    const otDetailRows=[];
+    STAGES.forEach(s=>{
+      const d=p.stages[s.id];
+      if(d&&!d.na&&d.otOn&&d.otSessions&&d.otSessions.length){
+        otDetailRows.push([]);
+        otDetailRows.push([s.label.toUpperCase()+' — OVERTIME SESSIONS']);
+        otDetailRows.push(['Date','Day','Start','End','Breaks (mins)','Productive mins']);
+        d.otSessions.forEach(sess=>{
+          otDetailRows.push([fmtDate(sess.date),dayName(sess.date),fmtTDec(sess.start),fmtTDec(sess.end),sess.breaks,sess.prodMins??'']);
+        });
+      }
+    });
+    if(otDetailRows.length) rows.push(...otDetailRows);
     if(p.notes) rows.push([],['Notes:',p.notes]);
     const ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=Array(14).fill({wch:24});
