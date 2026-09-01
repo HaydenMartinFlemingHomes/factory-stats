@@ -314,6 +314,19 @@ textarea { resize: vertical; }
             </label>
           </div>
         </div>
+        <div class="divider"></div>
+        <div class="grid-2">
+          <div class="field"><label>Size of dwelling (m&sup2;)</label><input type="number" id="proj-size-m2" placeholder="0" min="0" step="0.1"></div>
+          <div class="field"><label>Sell price per m&sup2; (&pound;)</label><input type="number" id="proj-sell-price-m2" placeholder="0" min="0" step="1"></div>
+        </div>
+        <div class="grid-2" style="margin-top:.875rem">
+          <div class="field"><label>Selling gross margin (&pound;)</label><input type="number" id="proj-margin-gbp" placeholder="0" step="1"></div>
+          <div class="field"><label>Selling gross margin (%)</label><input type="number" id="proj-margin-pct" placeholder="0" step="0.1"></div>
+        </div>
+        <div class="grid-2" style="margin-top:.875rem">
+          <div class="field"><label>Additional profit made (&pound;)</label><input type="number" id="proj-profit-made" placeholder="0" step="1"></div>
+          <div class="field"><label>Additional profit lost (&pound;)</label><input type="number" id="proj-profit-lost" placeholder="0" step="1"></div>
+        </div>
       </div>
 
       <div id="stages-container"></div>
@@ -722,6 +735,12 @@ async function saveProject(){
     ref:document.getElementById('proj-ref').value.trim(),
     budget:parseFloat(document.getElementById('proj-budget').value)||null,
     type: document.getElementById('proj-type-ifb').checked ? 'ifb' : 'standard',
+    sizeM2:parseFloat(document.getElementById('proj-size-m2').value)||null,
+    sellPriceM2:parseFloat(document.getElementById('proj-sell-price-m2').value)||null,
+    marginGBP:parseFloat(document.getElementById('proj-margin-gbp').value)||null,
+    marginPct:parseFloat(document.getElementById('proj-margin-pct').value)||null,
+    profitMade:parseFloat(document.getElementById('proj-profit-made').value)||null,
+    profitLost:parseFloat(document.getElementById('proj-profit-lost').value)||null,
     notes:document.getElementById('proj-notes').value,
     stages, savedAt:new Date().toISOString()
   };
@@ -752,7 +771,7 @@ async function deleteProject(id){
 }
 
 function clearForm(){
-  ['proj-name','proj-ref','proj-budget','proj-notes'].forEach(id=>{ document.getElementById(id).value=''; });
+  ['proj-name','proj-ref','proj-budget','proj-notes','proj-size-m2','proj-sell-price-m2','proj-margin-gbp','proj-margin-pct','proj-profit-made','proj-profit-lost'].forEach(id=>{ document.getElementById(id).value=''; });
   document.getElementById('proj-type-std').checked=true;
   updateTypeToggle();
   STAGES.forEach(s=>{
@@ -778,6 +797,12 @@ function loadDemo(){
   document.getElementById('proj-name').value='DEMO PROJECT 2400';
   document.getElementById('proj-ref').value='06.09';
   document.getElementById('proj-budget').value='4.50';
+  document.getElementById('proj-size-m2').value='142.5';
+  document.getElementById('proj-sell-price-m2').value='1850';
+  document.getElementById('proj-margin-gbp').value='58900';
+  document.getElementById('proj-margin-pct').value='22.5';
+  document.getElementById('proj-profit-made').value='3200';
+  document.getElementById('proj-profit-lost').value='650';
 
   const d={
     'cut-ext':{qty:1500,sd:'2026-05-04',st:'08:00',ed:'2026-05-06',et:'12:00',otOn:true,otd:'2026-05-06',ots:'17:00',ote:'19:30',otb:0},
@@ -821,12 +846,22 @@ function projCard(p){
       const label=diff>0?abs+' days over budget':diff<0?abs+' days under budget':'On budget';
       diffHtml=`<span style="display:inline-block;margin-top:3px;font-size:12px;font-weight:600;color:${col}">${sign}${diff} days vs budget &mdash; ${label}</span>`;
     }
+    const hasCommercial = p.sizeM2 || p.sellPriceM2 || p.marginGBP || p.marginPct || p.profitMade || p.profitLost;
+    const commercialHtml = hasCommercial ? `<div class="proj-meta">` +
+      (p.sizeM2 ? `Size: ${p.sizeM2} m&sup2;` : '') +
+      (p.sellPriceM2 ? ` &nbsp;&middot;&nbsp; Sell price: &pound;${p.sellPriceM2}/m&sup2;` : '') +
+      (p.marginGBP ? ` &nbsp;&middot;&nbsp; Margin: &pound;${p.marginGBP.toLocaleString()}` : '') +
+      (p.marginPct!=null ? ` &nbsp;&middot;&nbsp; Margin: ${p.marginPct}%` : '') +
+      (p.profitMade ? ` &nbsp;&middot;&nbsp; <span style="color:var(--green-text)">Profit made: &pound;${p.profitMade.toLocaleString()}</span>` : '') +
+      (p.profitLost ? ` &nbsp;&middot;&nbsp; <span style="color:var(--red-text)">Profit lost: &pound;${p.profitLost.toLocaleString()}</span>` : '') +
+      `</div>` : '';
     return`<div class="proj-card">
       ${p.ref?`<div class="proj-ref">${p.ref}</div>`:''}
       <div style="flex:1">
         <div class="proj-name">${p.name}</div>
         <div class="proj-meta">Ext panels: ${epD!==null?epD.toFixed(2):'—'} days &nbsp;&middot;&nbsp; Int panels: ${ipD} days &nbsp;&middot;&nbsp; Budget: ${p.budget?p.budget+' days':'—'}</div>
         ${diffHtml}
+        ${commercialHtml}
       </div>
       ${p.type==='ifb'?'<span class="badge" style="background:var(--teal-bg);color:var(--teal)">IFB</span>':''}
       ${hasOT?'<span class="badge badge-ot">OT</span>':''}
@@ -957,6 +992,24 @@ function renderSummary() {
     '<div class="metric"><div class="metric-label">Int. LM cut</div><div class="metric-value">' + tInt.toLocaleString() + '</div></div>' +
     '</div>';
 
+  function avgOf(key){ const vals = projects.map(p => p[key]).filter(v => v !== null && v !== undefined && !isNaN(v)); return vals.length ? avg(vals) : null; }
+  const avgSize = avgOf('sizeM2');
+  const avgSellPrice = avgOf('sellPriceM2');
+  const avgMarginGBP = avgOf('marginGBP');
+  const avgMarginPct = avgOf('marginPct');
+  const avgProfitMade = avgOf('profitMade');
+  const avgProfitLost = avgOf('profitLost');
+  html += '<div class="card">' +
+    '<div class="card-title">Commercial averages (all projects)</div>' +
+    '<div class="metric-grid">' +
+    '<div class="metric"><div class="metric-label">Avg size of dwelling</div><div class="metric-value">' + (avgSize!==null?avgSize.toFixed(1)+' m&sup2;':'—') + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Avg sell price / m&sup2;</div><div class="metric-value">' + (avgSellPrice!==null?'&pound;'+avgSellPrice.toFixed(0):'—') + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Avg gross margin (&pound;)</div><div class="metric-value">' + (avgMarginGBP!==null?'&pound;'+avgMarginGBP.toFixed(0):'—') + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Avg gross margin (%)</div><div class="metric-value">' + (avgMarginPct!==null?avgMarginPct.toFixed(1)+'%':'—') + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Avg profit made</div><div class="metric-value" style="color:var(--green-text)">' + (avgProfitMade!==null?'&pound;'+avgProfitMade.toFixed(0):'—') + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Avg profit lost</div><div class="metric-value" style="color:var(--red-text)">' + (avgProfitLost!==null?'&pound;'+avgProfitLost.toFixed(0):'—') + '</div></div>' +
+    '</div></div>';
+
   if (stdProjects.length) html += stageTableHtml('Standard', stageStats(stdProjects), stdProjects);
   if (ifbProjects.length) html += stageTableHtml('IFB', stageStats(ifbProjects), ifbProjects);
 
@@ -999,6 +1052,14 @@ function exportExcel(){
       const row=[];ids.forEach(id=>{ row.push(label,fn(p.stages[id])); });rows.push(row);
     });
     if(p.budget){ rows.push([],['BUDGETED DAYS',p.budget]); }
+    const commercialRows=[];
+    if(p.sizeM2) commercialRows.push(['SIZE OF DWELLING (M2)',p.sizeM2]);
+    if(p.sellPriceM2) commercialRows.push(['SELL PRICE PER M2',p.sellPriceM2]);
+    if(p.marginGBP) commercialRows.push(['SELLING GROSS MARGIN (£)',p.marginGBP]);
+    if(p.marginPct!=null) commercialRows.push(['SELLING GROSS MARGIN %',p.marginPct]);
+    if(p.profitMade) commercialRows.push(['ADDITIONAL PROFIT MADE',p.profitMade]);
+    if(p.profitLost) commercialRows.push(['ADDITIONAL PROFIT LOST',p.profitLost]);
+    if(commercialRows.length) rows.push([],...commercialRows);
     if(p.notes) rows.push([],['Notes:',p.notes]);
     const ws=XLSX.utils.aoa_to_sheet(rows);
     ws['!cols']=Array(14).fill({wch:24});
@@ -1009,6 +1070,19 @@ function exportExcel(){
   sumRows.push(['RUNNING STATISTICS — PLATFORM 1']);
   sumRows.push(['Generated',new Date().toLocaleDateString('en-GB'),'Projects',projects.length]);
   sumRows.push(['Productive day rate','445 mins','Break schedule','Mon–Thu: 75 mins · Fri: 15 mins']);
+  sumRows.push([]);
+  sumRows.push(['COMMERCIAL DATA','METRIC',...projects.map(p=>p.ref||p.name),'AVERAGE']);
+  const commercialMetrics=[
+    {k:'sizeM2',l:'Size of dwelling (m2)'},{k:'sellPriceM2',l:'Sell price per m2'},
+    {k:'marginGBP',l:'Selling gross margin (£)'},{k:'marginPct',l:'Selling gross margin %'},{k:'profitMade',l:'Additional profit made'},
+    {k:'profitLost',l:'Additional profit lost'},
+  ];
+  commercialMetrics.forEach((m,mi)=>{
+    const vals=projects.map(p=>p[m.k]!=null?p[m.k]:'');
+    const nums=vals.filter(v=>typeof v==='number');
+    const av=nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:null;
+    sumRows.push([mi===0?'Commercial':'',m.l,...vals,av!==null?parseFloat(av.toFixed(2)):'—']);
+  });
   sumRows.push([]);
   sumRows.push(['STAGE','METRIC',...projects.map(p=>p.ref||p.name),'AVERAGE']);
   STAGES.forEach(s=>{
