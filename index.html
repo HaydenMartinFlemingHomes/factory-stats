@@ -954,6 +954,64 @@ function renderProjects(){
 
 function avg(arr){ return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0; }
 
+// Least-squares linear regression: points = [{x,y}, ...]. Returns null if there isn't enough
+// variation in x to fit a line (fewer than 2 points, or every point has the same size).
+function linearRegression(points){
+  const n=points.length;
+  if(n<2) return null;
+  const meanX=avg(points.map(p=>p.x)), meanY=avg(points.map(p=>p.y));
+  let ssXY=0, ssXX=0, ssYY=0;
+  points.forEach(p=>{
+    ssXY+=(p.x-meanX)*(p.y-meanY);
+    ssXX+=(p.x-meanX)*(p.x-meanX);
+    ssYY+=(p.y-meanY)*(p.y-meanY);
+  });
+  if(ssXX===0) return null;
+  const slope=ssXY/ssXX;
+  const intercept=meanY-slope*meanX;
+  const r2=ssYY===0?1:Math.pow(ssXY,2)/(ssXX*ssYY);
+  return{n,slope,intercept,r2};
+}
+
+// Dwelling size (m2) vs external panel productive days, for projects of the given type
+// that have both a logged size and a completed (non-N/A) external panels stage.
+function extPanelRegressionData(type){
+  return projects
+    .filter(p=>type==='ifb'?p.type==='ifb':(!p.type||p.type==='standard'))
+    .map(p=>{
+      const ep=p.stages['ext-panels'];
+      if(!ep||ep.na||!ep.totalProdDays||!p.sizeM2) return null;
+      return{x:p.sizeM2,y:ep.totalProdDays};
+    })
+    .filter(Boolean);
+}
+
+function regressionSummaryHtml(colorVar,reg){
+  if(!reg) return '<div style="font-size:12px;color:var(--text-3)">Not enough data yet &mdash; need at least 2 projects with both dwelling size and external panel time logged.</div>';
+  const warn=reg.n<5?'<div style="font-size:11px;color:var(--amber-text);margin-top:4px">&#9888; Based on only '+reg.n+' project'+(reg.n!==1?'s':'')+' &mdash; treat as indicative until more data is logged.</div>':'';
+  return'<div style="font-family:\'DM Mono\',monospace;font-size:13px;color:'+colorVar+'">Days &asymp; '+reg.slope.toFixed(4)+' &times; size + '+reg.intercept.toFixed(2)+'</div>'+
+    '<div style="font-size:12px;color:var(--text-2);margin-top:4px">R&sup2; = '+reg.r2.toFixed(3)+' &nbsp;&middot;&nbsp; n = '+reg.n+' project'+(reg.n!==1?'s':'')+'</div>'+
+    warn;
+}
+
+function estimateExtPanelDays(){
+  const size=parseFloat(document.getElementById('est-size').value);
+  const type=document.getElementById('est-type').value;
+  const el=document.getElementById('est-result');
+  if(!size||size<=0){ el.innerHTML='<div class="alert alert-error" style="margin:0">Enter a valid dwelling size.</div>'; return; }
+  const reg=linearRegression(extPanelRegressionData(type));
+  if(!reg){ el.innerHTML='<div class="alert alert-error" style="margin:0">Not enough '+(type==='ifb'?'IFB':'Standard')+' data yet &mdash; need at least 2 projects with both dwelling size and external panel time logged.</div>'; return; }
+  const predDays=Math.max(0,reg.slope*size+reg.intercept);
+  const predMins=predDays*PROD_DAY;
+  const predHrs=predMins/60;
+  const confidence=reg.n<5?'<span class="pill warn">Limited data (n='+reg.n+') &mdash; indicative only</span>':'<span class="pill teal">n='+reg.n+' projects &middot; R&sup2; '+reg.r2.toFixed(2)+'</span>';
+  el.innerHTML='<div class="metric" style="max-width:340px;margin-bottom:.625rem">'+
+    '<div class="metric-label">Estimated external panel time &mdash; '+(type==='ifb'?'IFB':'Standard')+', '+size+' m&sup2;</div>'+
+    '<div class="metric-value" style="color:var(--teal)">'+predDays.toFixed(2)+' days</div>'+
+    '<div style="font-size:12px;color:var(--text-2);margin-top:4px">'+predHrs.toFixed(1)+' hrs &middot; '+Math.round(predMins)+' mins</div>'+
+    '</div>'+confidence;
+}
+
 function stageTableHtml(typeLabel, ss, proj) {
   const isIFB = typeLabel === 'IFB';
   const headerCol = isIFB ? 'var(--teal)' : 'var(--text)';
@@ -1068,6 +1126,25 @@ function renderSummary() {
     '<div class="metric"><div class="metric-label">Avg profit made</div><div class="metric-value" style="color:var(--green-text)">' + (avgProfitMade!==null?'&pound;'+avgProfitMade.toFixed(0):'—') + '</div></div>' +
     '<div class="metric"><div class="metric-label">Avg profit lost</div><div class="metric-value" style="color:var(--red-text)">' + (avgProfitLost!==null?'&pound;'+avgProfitLost.toFixed(0):'—') + '</div></div>' +
     '</div></div>';
+
+  const regStd = linearRegression(extPanelRegressionData('standard'));
+  const regIfb = linearRegression(extPanelRegressionData('ifb'));
+  html += '<div class="card">' +
+    '<div class="card-title">External panel manufacture time estimator</div>' +
+    '<div class="page-sub" style="margin:-.5rem 0 1rem">Linear regression of dwelling size (m&sup2;) vs external panel productive days, fitted separately per project type.</div>' +
+    '<div class="grid-2">' +
+      '<div><div style="font-size:11px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Standard</div>' + regressionSummaryHtml('var(--text)', regStd) + '</div>' +
+      '<div><div style="font-size:11px;font-weight:600;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">IFB</div>' + regressionSummaryHtml('var(--teal)', regIfb) + '</div>' +
+    '</div>' +
+    '<div class="divider"></div>' +
+    '<div class="card-title">Predict manufacture time</div>' +
+    '<div style="display:flex;gap:.875rem;align-items:end;flex-wrap:wrap">' +
+      '<div class="field" style="min-width:160px"><label>Dwelling size (m&sup2;)</label><input type="number" id="est-size" placeholder="e.g. 150" min="0" step="0.1"></div>' +
+      '<div class="field" style="min-width:140px"><label>Project type</label><select id="est-type"><option value="standard">Standard</option><option value="ifb">IFB</option></select></div>' +
+      '<button class="btn btn-dark" onclick="estimateExtPanelDays()">Estimate</button>' +
+    '</div>' +
+    '<div id="est-result" style="margin-top:1rem"></div>' +
+    '</div>';
 
   if (stdProjects.length) html += stageTableHtml('Standard', stageStats(stdProjects), stdProjects);
   if (ifbProjects.length) html += stageTableHtml('IFB', stageStats(ifbProjects), ifbProjects);
