@@ -292,8 +292,8 @@ textarea { resize: vertical; }
     <!-- ENTRY PAGE -->
     <div id="page-entry" class="page active">
       <div class="page-header">
-        <div class="page-title">New project entry</div>
-        <div class="page-sub">Record start/end times for each manufacturing stage</div>
+        <div class="page-title" id="entry-title">New project entry</div>
+        <div class="page-sub" id="entry-sub">Record start/end times for each manufacturing stage</div>
       </div>
 
       <div class="card">
@@ -347,7 +347,7 @@ textarea { resize: vertical; }
         </button>
         <button class="btn btn-dark" onclick="saveProject()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-          Save project
+          <span id="save-btn-label">Save project</span>
         </button>
       </div>
     </div>
@@ -436,18 +436,21 @@ async function migrateLocalData() {
   setSyncStatus("Migrated & synced • Supabase", "#1a7a4a");
 }
 
-async function persistProject(proj) {
+async function persistProject(proj, isUpdate) {
   const { id, savedAt, ...data } = proj;
   try {
+    // The anon key only has INSERT/SELECT/DELETE grants on this table, not UPDATE —
+    // so editing an existing project deletes and re-inserts it under the same id/saved_at.
+    if(isUpdate) await sbFetch("fh_projects?id=eq."+Number(id), { method: "DELETE" });
     await sbFetch("fh_projects", {
       method: "POST",
       body: JSON.stringify({ id: Number(id), data: { ...data, id: Number(id) }, saved_at: savedAt })
     });
-    setSyncStatus("Saved • Supabase", "#1a7a4a");
+    setSyncStatus((isUpdate?"Updated":"Saved")+" • Supabase", "#1a7a4a");
   } catch(e) {
     // Fallback: save to local storage
     localStorage.setItem("fh_v4", JSON.stringify(projects));
-    setSyncStatus("Saved locally (Supabase offline)", "#c0392b");
+    setSyncStatus((isUpdate?"Updated":"Saved")+" locally (Supabase offline)", "#c0392b");
     console.warn("Supabase save failed:", e);
   }
 }
@@ -560,6 +563,7 @@ const STAGES=[
 
 let projects=[];
 try{ projects=JSON.parse(localStorage.getItem('fh_v4')||'[]'); }catch(e){}
+let editingProjectId=null;
 
 function buildStages(){
   const c=document.getElementById('stages-container');
@@ -778,29 +782,42 @@ function getStageData(id){
   };
 }
 
+// Unlike parseFloat(...)||null, this preserves an explicitly-entered 0 instead of
+// collapsing it to null (0 is falsy, so the old `||null` pattern lost real zero values).
+function numOrNull(id){
+  const v=document.getElementById(id).value;
+  return v===''?null:parseFloat(v);
+}
+
 async function saveProject(){
   const name=document.getElementById('proj-name').value.trim();
   if(!name){ showAlert('Please enter a project name.','error'); return; }
+  const isUpdate=editingProjectId!==null;
+  const existing=isUpdate?projects.find(p=>p.id===editingProjectId):null;
   const stages={};
   STAGES.forEach(s=>{ stages[s.id]=getStageData(s.id); });
   const proj={
-    id:Date.now(), name,
+    id:isUpdate?editingProjectId:Date.now(), name,
     ref:document.getElementById('proj-ref').value.trim(),
-    budget:parseFloat(document.getElementById('proj-budget').value)||null,
+    budget:numOrNull('proj-budget'),
     type: document.getElementById('proj-type-ifb').checked ? 'ifb' : 'standard',
-    sizeM2:parseFloat(document.getElementById('proj-size-m2').value)||null,
-    sellPriceM2:parseFloat(document.getElementById('proj-sell-price-m2').value)||null,
-    marginGBP:parseFloat(document.getElementById('proj-margin-gbp').value)||null,
-    marginPct:parseFloat(document.getElementById('proj-margin-pct').value)||null,
-    profitMade:parseFloat(document.getElementById('proj-profit-made').value)||null,
-    profitLost:parseFloat(document.getElementById('proj-profit-lost').value)||null,
+    sizeM2:numOrNull('proj-size-m2'),
+    sellPriceM2:numOrNull('proj-sell-price-m2'),
+    marginGBP:numOrNull('proj-margin-gbp'),
+    marginPct:numOrNull('proj-margin-pct'),
+    profitMade:numOrNull('proj-profit-made'),
+    profitLost:numOrNull('proj-profit-lost'),
     notes:document.getElementById('proj-notes').value,
-    stages, savedAt:new Date().toISOString()
+    stages, savedAt:isUpdate?existing.savedAt:new Date().toISOString()
   };
-  projects.push(proj);
-  setSyncStatus('Saving...', '#92580a');
-  await persistProject(proj);
-  showAlert('Project "'+name+'" saved successfully.','success');
+  if(isUpdate){
+    projects=projects.map(p=>p.id===editingProjectId?proj:p);
+  } else {
+    projects.push(proj);
+  }
+  setSyncStatus(isUpdate?'Updating...':'Saving...', '#92580a');
+  await persistProject(proj, isUpdate);
+  showAlert('Project "'+name+'" '+(isUpdate?'updated':'saved')+' successfully.','success');
   updateSidebarCount();
   renderProjects();
   renderSummary();
@@ -823,7 +840,15 @@ async function deleteProject(id){
   updateSidebarCount(); renderProjects(); renderSummary();
 }
 
+function setEntryMode(editing){
+  document.getElementById('entry-title').textContent=editing?'Edit project':'New project entry';
+  document.getElementById('entry-sub').textContent=editing?'Update details for an existing project':'Record start/end times for each manufacturing stage';
+  document.getElementById('save-btn-label').textContent=editing?'Update project':'Save project';
+}
+
 function clearForm(){
+  editingProjectId=null;
+  setEntryMode(false);
   ['proj-name','proj-ref','proj-budget','proj-notes','proj-size-m2','proj-sell-price-m2','proj-margin-gbp','proj-margin-pct','proj-profit-made','proj-profit-lost'].forEach(id=>{ document.getElementById(id).value=''; });
   document.getElementById('proj-type-std').checked=true;
   updateTypeToggle();
@@ -844,7 +869,69 @@ function clearForm(){
   });
 }
 
+function editProject(id){
+  const p=projects.find(pr=>pr.id===id);
+  if(!p) return;
+  clearForm();
+  editingProjectId=id;
+  setEntryMode(true);
+
+  document.getElementById('proj-name').value=p.name||'';
+  document.getElementById('proj-ref').value=p.ref||'';
+  document.getElementById('proj-budget').value=p.budget??'';
+  document.getElementById(p.type==='ifb'?'proj-type-ifb':'proj-type-std').checked=true;
+  updateTypeToggle();
+  document.getElementById('proj-size-m2').value=p.sizeM2??'';
+  document.getElementById('proj-sell-price-m2').value=p.sellPriceM2??'';
+  document.getElementById('proj-margin-gbp').value=p.marginGBP??'';
+  document.getElementById('proj-margin-pct').value=p.marginPct??'';
+  document.getElementById('proj-profit-made').value=p.profitMade??'';
+  document.getElementById('proj-profit-lost').value=p.profitLost??'';
+  document.getElementById('proj-notes').value=p.notes||'';
+
+  STAGES.forEach(s=>{
+    const d=p.stages[s.id];
+    if(!d) return;
+    if(d.na){
+      document.getElementById(s.id+'-na').checked=true;
+      toggleNA(s.id);
+      return;
+    }
+    document.getElementById(s.id+'-qty').value=d.qty??'';
+    writeDate(s.id+'-sd', d.startDate);
+    document.getElementById(s.id+'-st').value=d.startTime||'08:00';
+    writeDate(s.id+'-ed', d.endDate);
+    document.getElementById(s.id+'-et').value=d.endTime||'17:00';
+
+    // otSessions is the current format; older saved projects (before multi-session OT)
+    // only have a single otDate/otStart/otEnd/otBreakMins block, so fall back to that.
+    let sessions=d.otSessions;
+    if((!sessions||!sessions.length)&&d.otOn&&d.otDate){
+      sessions=[{date:d.otDate,start:d.otStart,end:d.otEnd,breaks:d.otBreakMins||0}];
+    }
+    if(d.otOn&&sessions&&sessions.length){
+      document.getElementById(s.id+'-ot-on').checked=true;
+      document.getElementById(s.id+'-ot-panel').style.display='block';
+      sessions.forEach(sess=>{
+        const uid=addOTSession(s.id);
+        writeDate(`ot-${s.id}-${uid}`, sess.date);
+        document.getElementById(`ot-${s.id}-${uid}-start`).value=sess.start||'17:00';
+        document.getElementById(`ot-${s.id}-${uid}-end`).value=sess.end||'20:00';
+        document.getElementById(`ot-${s.id}-${uid}-breaks`).value=sess.breaks??0;
+      });
+    }
+    toggleNA(s.id);
+    recalc(s.id);
+  });
+
+  showPage('entry', document.querySelector('.nav-item[onclick*="entry"]'));
+  window.scrollTo(0,0);
+  document.querySelector('.main').scrollTo(0,0);
+}
+
 function loadDemo(){
+  editingProjectId=null;
+  setEntryMode(false);
   document.getElementById('proj-name').value='DEMO PROJECT 2400';
   document.getElementById('proj-ref').value='06.09';
   document.getElementById('proj-budget').value='4.50';
@@ -924,6 +1011,9 @@ function projCard(p){
       </div>
       ${p.type==='ifb'?'<span class="badge" style="background:var(--teal-bg);color:var(--teal)">IFB</span>':''}
       ${hasOT?'<span class="badge badge-ot">OT</span>':''}
+      <button class="btn btn-sm" onclick="editProject(${p.id})" title="Edit project">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      </button>
       <button class="btn btn-sm btn-red" onclick="deleteProject(${p.id})" title="Delete project">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
       </button>
