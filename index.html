@@ -792,6 +792,11 @@ function numOrNull(id){
 async function saveProject(){
   const name=document.getElementById('proj-name').value.trim();
   if(!name){ showAlert('Please enter a project name.','error'); return; }
+  const marginPct=numOrNull('proj-margin-pct');
+  if(marginPct!==null&&(marginPct>100||marginPct<-100)){
+    showAlert('Selling gross margin % looks off ('+marginPct+'%) — check for a typo (e.g. entered in the £ box by mistake) before saving.','error');
+    return;
+  }
   const isUpdate=editingProjectId!==null;
   const existing=isUpdate?projects.find(p=>p.id===editingProjectId):null;
   const stages={};
@@ -804,7 +809,7 @@ async function saveProject(){
     sizeM2:numOrNull('proj-size-m2'),
     sellPriceM2:numOrNull('proj-sell-price-m2'),
     marginGBP:numOrNull('proj-margin-gbp'),
-    marginPct:numOrNull('proj-margin-pct'),
+    marginPct,
     profitMade:numOrNull('proj-profit-made'),
     profitLost:numOrNull('proj-profit-lost'),
     notes:document.getElementById('proj-notes').value,
