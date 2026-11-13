@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1a1917">
+<title>Platform 1 Daily Log · Fleming Homes</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f5f4f0; --surface:#fff; --surface2:#f0efe9; --border:#e2e0d8; --border-strong:#c8c6bc;
+  --text:#1a1917; --text-2:#6b6960; --text-3:#9b9a94;
+  --teal:#0d6b5e; --teal-bg:#e6f4f1;
+  --amber:#b26d0c; --amber-bg:#fef3e2; --amber-text:#7a4a08;
+  --red:#c0392b; --red-bg:#fdecea; --red-text:#a93226;
+  --green:#1a7a4a; --green-bg:#e8f5ee; --green-text:#156138;
+  --radius:10px; --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.5;
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));min-height:100vh}
+.topbar{background:var(--text);color:#fff;position:sticky;top:0;z-index:50;padding:10px 16px 12px}
+.topbar-row,.proj-bar{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:8px}
+.topbar-row{justify-content:space-between}
+.brand{font-weight:600;font-size:15px;line-height:1.25}
+.brand small{display:block;font-weight:400;font-size:11px;color:rgba(255,255,255,.55)}
+.sync{font-size:11px;color:rgba(255,255,255,.65);text-align:right;display:flex;align-items:center;gap:6px}
+.sync i{width:8px;height:8px;border-radius:50%;background:#888;display:inline-block}
+.proj-bar{margin-top:10px}
+.proj-bar select{flex:1;min-width:0;background:#2c2b28;color:#fff;border:1px solid #45443f;font-size:16px;padding:10px 12px;border-radius:8px;font-family:inherit}
+.proj-bar button{background:#fff;color:var(--text);border:none;border-radius:8px;padding:0 14px;font-weight:600;font-size:14px;min-height:44px;font-family:inherit;white-space:nowrap}
+.wrap{max-width:680px;margin:0 auto;padding:16px}
+.page{display:none}.page.active{display:block}
+.page-title{font-size:20px;font-weight:600;letter-spacing:-.02em}
+.page-sub{font-size:13px;color:var(--text-2);margin:2px 0 14px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.card-title{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.card>.field:last-child{margin-bottom:0}
+.field>label,.lbl{font-size:13px;font-weight:500;color:var(--text-2)}
+.hint{font-size:12px;color:var(--text-3)}
+input,select,textarea{font-size:16px;padding:11px 12px;border:1px solid var(--border-strong);border-radius:8px;width:100%;background:#fff;font-family:inherit;color:var(--text)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:-1px;border-color:var(--teal)}
+textarea{resize:vertical;min-height:84px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row2>.field{margin-bottom:14px}
+.stepper{display:flex}
+.stepper button{width:46px;flex-shrink:0;font-size:24px;line-height:1;background:var(--surface2);border:1px solid var(--border-strong);color:var(--text);font-family:inherit;cursor:pointer}
+.stepper button:first-child{border-radius:8px 0 0 8px;border-right:none}
+.stepper button:last-child{border-radius:0 8px 8px 0;border-left:none}
+.stepper button:active{background:var(--border)}
+.stepper input{border-radius:0;text-align:center;padding:11px 2px;font-family:'DM Mono',monospace;font-size:18px;min-width:0;-moz-appearance:textfield}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.time-in{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.time-in div{position:relative}
+.time-in input{padding-right:46px;font-family:'DM Mono',monospace}
+.time-in span{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-3);pointer-events:none}
+.seg{display:flex;gap:8px}
+.seg button{flex:1;min-height:48px;border:1.5px solid var(--border-strong);background:#fff;border-radius:8px;font-size:15px;font-weight:500;color:var(--text-2);font-family:inherit;cursor:pointer}
+.seg button.on[data-v="true"],.seg button.on[data-v="standard"],.seg button.on[data-v="ifb"]{background:var(--green);border-color:var(--green);color:#fff}
+.seg button.on[data-v="false"]{background:var(--red);border-color:var(--red);color:#fff}
+.seg button.on[data-v="standard"],.seg button.on[data-v="ifb"]{background:var(--text);border-color:var(--text)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;border-radius:10px;border:1.5px solid var(--border-strong);background:#fff;font-size:16px;font-weight:600;font-family:inherit;color:var(--text);cursor:pointer}
+.btn-dark{background:var(--text);border-color:var(--text);color:#fff}
+.btn-green{background:var(--green);border-color:var(--green);color:#fff}
+.btn:disabled{opacity:.55}
+.btn+.btn{margin-top:10px}
+.auto{display:flex;justify-content:space-between;align-items:center;background:var(--teal-bg);color:var(--teal);border-radius:8px;padding:12px 14px;margin-bottom:14px}
+.auto b{font-family:'DM Mono',monospace;font-size:22px}
+.auto small{display:block;font-size:12px;opacity:.8}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qgrid .field{margin-bottom:0}
+.total{margin-top:14px}
+.total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;font-size:14px;color:var(--text-2)}
+.total-row b{font-family:'DM Mono',monospace;font-size:18px;color:var(--text)}
+.bar{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--teal);border-radius:5px;transition:width .3s}
+.bar.green>i{background:var(--green)}.bar.amber>i{background:var(--amber)}.bar.red>i{background:var(--red)}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--border);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:50}
+.tabs-in{display:flex;width:100%;max-width:680px}
+.tab{flex:1;padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:500;color:var(--text-3);background:none;border:none;font-family:inherit;cursor:pointer}
+.tab svg{width:22px;height:22px}
+.tab.active{color:var(--text);font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:10px 18px;border-radius:24px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:all .25s;z-index:60;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.err{background:var(--red)}
+.banner{border-radius:8px;padding:12px 14px;font-size:13px;margin-bottom:12px}
+.banner.warn{background:var(--amber-bg);color:var(--amber-text)}
+.banner.info{background:var(--teal-bg);color:var(--teal)}
+.empty{text-align:center;color:var(--text-2);padding:28px 12px}
+.empty b{display:block;color:var(--text);font-size:16px;margin-bottom:4px}
+.log-item{border-top:1px solid var(--border);padding:12px 0}
+.log-item:first-child{border-top:none;padding-top:0}
+.log-head{display:flex;justify-content:space-between;font-size:13px;color:var(--text-2);margin-bottom:6px}
+.log-line{font-size:14px;margin-bottom:4px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;vertical-align:middle}
+.pill.yes{background:var(--green-bg);color:var(--green-text)}
+.pill.no{background:var(--red-bg);color:var(--red-text)}
+.pill.type{background:var(--surface2);color:var(--text-2);text-transform:uppercase;letter-spacing:.04em}
+.pill.done{background:var(--teal-bg);color:var(--teal)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.kpi{background:var(--surface2);border-radius:8px;padding:10px 12px}
+.kpi span{display:block;font-size:12px;color:var(--text-2)}
+.kpi b{font-family:'DM Mono',monospace;font-size:20px;font-weight:500}
+.live-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
+.live-name{font-size:17px;font-weight:600}
+.live-ref{font-size:13px;color:var(--text-2)}
+.big{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.big b{font-family:'DM Mono',monospace;font-size:40px;font-weight:500;line-height:1}
+.big span{font-size:15px;color:var(--text-2)}
+.status{font-size:12px;font-weight:600;padding:4px 10px;border-radius:12px;white-space:nowrap}
+.status.green{background:var(--green-bg);color:var(--green-text)}
+.status.amber{background:var(--amber-bg);color:var(--amber-text)}
+.status.red{background:var(--red-bg);color:var(--red-text)}
+.status.grey{background:var(--surface2);color:var(--text-2)}
+.qbars{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px}
+.qbar{text-align:center;font-size:12px;color:var(--text-2)}
+.qbar .col{height:64px;background:var(--surface2);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden;margin-bottom:4px;position:relative}
+.qbar .col i{display:block;width:100%;background:var(--teal)}
+.qbar .col em{position:absolute;left:0;right:0;border-top:2px dashed var(--text-3)}
+.qbar b{display:block;font-family:'DM Mono',monospace;font-size:15px;color:var(--text)}
+.note{background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:12px;white-space:pre-wrap}
+.note span{display:block;font-size:12px;color:var(--text-2);margin-bottom:2px;white-space:normal}
+.meta{font-size:12px;color:var(--text-3);margin-top:12px}
+.live-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.live-bar input{flex:1}
+.live-upd{font-size:12px;color:var(--text-2);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.live-upd i{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.sec-gap{height:6px}
+@media (max-width:360px){.row2{grid-template-columns:1fr}.big b{font-size:34px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-row">
+    <div class="brand">Platform 1 Daily Log<small>Fleming Homes · production line</small></div>
+    <div class="sync"><i id="sync-dot"></i><span id="sync-text">Connecting…</span></div>
+  </div>
+  <div class="proj-bar">
+    <select id="proj-select" aria-label="Project" onchange="selectProject(this.value)"></select>
+    <button type="button" onclick="newProject()">+ New</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="banner-area"></div>
+
+  <!-- ───────── TODAY ───────── -->
+  <section id="page-today" class="page active">
+    <div class="page-title">Daily record</div>
+    <div class="page-sub">Update through the day — line managers see it live.</div>
+    <div id="today-empty" class="card empty" style="display:none"><b>No project selected</b>Tap <strong>+ New</strong> to start a project.</div>
+    <div id="today-form">
+      <div class="card">
+        <div class="row2">
+          <div class="field"><label for="d-date">Date</label><input type="date" id="d-date" onchange="loadDaily()"></div>
+          <div class="field"><label for="who">Entered by</label><input type="text" id="who" placeholder="Your name" autocomplete="name" onchange="saveWho()"></div>
+        </div>
+        <div class="auto" id="d-yesterday"><div>Yesterday's number<small>—</small></div><b>—</b></div>
+        <div class="row2">
+          <div id="st-d-people"></div>
+          <div id="st-d-target"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Panels made per quarter</div>
+        <div class="qgrid">
+          <div id="st-d-q1"></div><div id="st-d-q2"></div>
+          <div id="st-d-q3"></div><div id="st-d-q4"></div>
+        </div>
+        <div class="total">
+          <div class="total-row"><span>Total today</span><span><b id="d-total">0</b> <span id="d-total-of"></span></span></div>
+          <div class="bar" id="d-bar"><i style="width:0"></i></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">CDT &amp; disruptions</div>
+        <div id="st-d-cdt"></div>
+        <div id="ti-d-cdt-down"></div>
+        <div class="field"><label for="d-disrupt">Other disruptions</label><textarea id="d-disrupt" placeholder="What held the line up today?"></textarea></div>
+      </div>
+      <button class="btn btn-dark" id="d-save" onclick="saveDaily()">Save daily record</button>
+      <div class="meta" id="d-meta" style="text-align:center"></div>
+    </div>
+  </section>
+
+  <!-- ───────── READINESS ───────── -->
+  <section id="page-ready" class="page">
+    <div class="page-title">Project readiness</div>
+    <div class="page-sub">Enter at the start of the project, or part way through.</div>
+    <div id="ready-empty" class="card empty" style="display:none"><b>No project selected</b>Tap <strong>+ New</strong> to start a project.</div>
+    <div id="ready-form">
+      <div class="card">
+        <div class="field"><label for="r-date">Date</label><input type="date" id="r-date"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cutting</div>
+        <div class="field"><span class="lbl">Cutting list ready?</span><div class="seg" id="seg-r-cut"><button type="button" data-v="true">Yes</button><button type="button" data-v="false">No</button></div></div>
+        <div id="ti-r-cut-gap"></div>
+        <div class="field"><label for="r-cut-reason">Reason for time between cutting</label><textarea id="r-cut-reason" placeholder="Why was there a gap?"></textarea></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Panels</div>
+        <div class="field"><span class="lbl">Panel drawings ready?</span><div class="seg" id="seg-r-draw"><button type="button" data-v="true">Yes</button><button type="button" data-v="false">No</button></div></div>
+        <div id="ti-r-panel-gap"></div>
+        <div class="field"><label for="r-panel-reason">Reason for time between panels</label><textarea id="r-panel-reason" placeholder="Why was there a gap?"></textarea></div>
+      </div>
+      <button class="btn btn-dark" id="r-save" onclick="saveReadiness()">Save readiness entry</button>
+      <div class="sec-gap"></div>
+      <div class="card" style="margin-top:12px">
+        <div class="card-title">Previous entries for this project</div>
+        <div id="r-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────── PROJECT ───────── -->
+  <section id="page-project" class="page">
+    <div class="page-title" id="p-title">Project</div>
+    <div class="page-sub" id="p-sub">Start-up details, entered at the start of the project.</div>
+    <div class="card">
+      <div class="card-title">Project start-up</div>
+      <div class="field"><label for="p-name">Project name</label><input type="text" id="p-name" placeholder="e.g. BURNS 2329"></div>
+      <div class="field"><label for="p-ref">Project reference</label><input type="text" id="p-ref" placeholder="e.g. 06.09"><span class="hint">Use the same reference as Factory Stats so the two can be matched up.</span></div>
+      <div class="field"><span class="lbl">Standard project or IFB?</span><div class="seg" id="seg-p-type"><button type="button" data-v="standard">Standard</button><button type="button" data-v="ifb">IFB</button></div></div>
+      <div class="field"><label for="p-budget">Budgeted manufacturing days</label><input type="number" id="p-budget" inputmode="decimal" min="0" step="0.25" placeholder="e.g. 4.5"></div>
+      <div class="field"><label for="p-target">Target completion (day, date &amp; time)</label><input type="datetime-local" id="p-target"><span class="hint" id="p-target-day"></span></div>
+      <button class="btn btn-dark" id="p-save" onclick="saveProject()">Start project</button>
+    </div>
+
+    <div id="p-existing">
+      <div class="card">
+        <div class="card-title">Progress so far</div>
+        <div class="kpis" id="p-progress" style="margin-top:0"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">End of project</div>
+        <div class="row2">
+          <div id="st-e-planing"></div><div id="st-e-cutting"></div>
+          <div id="st-e-ripping"></div><div id="st-e-subbing"></div>
+          <div id="st-e-panel"></div><div id="st-e-cdt"></div>
+        </div>
+        <div class="hint" id="e-cdt-hint" style="margin:-6px 0 14px"></div>
+        <div id="ti-e-machine"></div>
+        <div class="field"><span class="lbl">Internal panels manufactured in production line time?</span><div class="seg" id="seg-e-internal"><button type="button" data-v="true">True</button><button type="button" data-v="false">False</button></div></div>
+        <button class="btn btn-green" id="e-save" onclick="saveEnd()">Save &amp; mark project complete</button>
+        <div class="meta" id="e-meta" style="text-align:center"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───────── LIVE ───────── -->
+  <section id="page-live" class="page">
+    <div class="page-title">Live view</div>
+    <div class="page-sub">Today's line performance for line managers.</div>
+    <div class="live-bar"><input type="date" id="l-date" aria-label="Day to view" onchange="renderLive()"><button class="btn" style="width:auto;padding:0 16px;min-height:46px" onclick="setLiveToday()">Today</button></div>
+    <div class="live-upd" id="l-upd"></div>
+    <div id="l-content"></div>
+  </section>
+</div>
+
+<nav class="tabs"><div class="tabs-in">
+  <button class="tab active" data-page="today" onclick="showPage('today')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Today</button>
+  <button class="tab" data-page="ready" onclick="showPage('ready')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>Readiness</button>
+  <button class="tab" data-page="project" onclick="showPage('project')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>Project</button>
+  <button class="tab" data-page="live" onclick="showPage('live')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Live</button>
+</div></nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config (same Supabase project as Factory Stats) ─────────────────────
+const SB_URL = "https://rbswisdemhybyrsujqcx.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJic3dpc2RlbWh5Ynlyc3VqcWN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4NDY4NjMsImV4cCI6MjEwMTQyMjg2M30.jfuldsSPT0f896oVu0CW10cXMohdUu3e95vsnoadmfQ";
+const DEMO = new URLSearchParams(location.search).has('demo');
+const LIVE_REFRESH_MS = 30000;
+
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+
+// ── Date helpers ───────────────────────────────────────────────────────
+const pad = n => String(n).padStart(2,'0');
+const isoDate = d => d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today = () => isoDate(new Date());
+const fmtDay = s => s ? new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}) : '';
+const fmtDateTime = s => s ? new Date(s).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+const fmtTime = s => s ? new Date(s).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '';
+function prevWorkday(s){ const d=new Date(s+'T12:00:00'); do{ d.setDate(d.getDate()-1); }while(d.getDay()===0||d.getDay()===6); return isoDate(d); }
+function toLocalInput(iso){ if(!iso) return ''; const d=new Date(iso); return isoDate(d)+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); }
+function fmtMins(m){ if(m==null) return '—'; const h=Math.floor(m/60), r=m%60; return h ? (r? h+'h '+r+'m' : h+'h') : r+'m'; }
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const numOrNull = v => { if(v===''||v==null) return null; const n=Number(v); return isFinite(n)?n:null; };
+const sumQ = r => r ? ['q1','q2','q3','q4'].reduce((a,k)=>a+(r[k]||0),0) : 0;
+const quartersDone = r => r ? ['q1','q2','q3','q4'].filter(k=>r[k]!=null).length : 0;
+
+// ── Data layer: Supabase ───────────────────────────────────────────────
+async function sb(path, opts={}){
+  const res = await fetch(SB_URL+'/rest/v1/'+path, { ...opts, headers:{
+    'Content-Type':'application/json', apikey:SB_KEY, Authorization:'Bearer '+SB_KEY,
+    Prefer:'return=representation', ...(opts.headers||{}) }});
+  if(!res.ok){ const t=await res.text(); const e=new Error(res.status+': '+t); e.status=res.status; e.body=t; throw e; }
+  const t = await res.text(); return t ? JSON.parse(t) : [];
+}
+const UPSERT = { Prefer:'return=representation,resolution=merge-duplicates' };
+const remote = {
+  listProjects:   () => sb('line_projects?order=created_at.desc'),
+  insertProject:  p => sb('line_projects',{method:'POST',body:JSON.stringify(p)}).then(r=>r[0]),
+  updateProject:  (id,p) => sb('line_projects?id=eq.'+id,{method:'PATCH',body:JSON.stringify(p)}).then(r=>r[0]),
+  getDaily:       (pid,d) => sb(`line_daily?project_id=eq.${pid}&work_date=eq.${d}`).then(r=>r[0]||null),
+  prevDaily:      (pid,d) => sb(`line_daily?project_id=eq.${pid}&work_date=lt.${d}&order=work_date.desc&limit=1`).then(r=>r[0]||null),
+  dailyForDate:   d => sb(`line_daily?work_date=eq.${d}`),
+  dailyForProject:pid => sb(`line_daily?project_id=eq.${pid}&order=work_date.asc`),
+  upsertDaily:    r => sb('line_daily?on_conflict=project_id,work_date',{method:'POST',headers:UPSERT,body:JSON.stringify(r)}).then(x=>x[0]),
+  listReadiness:  pid => sb(`line_readiness?project_id=eq.${pid}&order=entry_date.desc,created_at.desc`),
+  insertReadiness:r => sb('line_readiness',{method:'POST',body:JSON.stringify(r)}).then(x=>x[0]),
+  getEnd:         pid => sb(`line_project_end?project_id=eq.${pid}`).then(r=>r[0]||null),
+  upsertEnd:      e => sb('line_project_end?on_conflict=project_id',{method:'POST',headers:UPSERT,body:JSON.stringify(e)}).then(x=>x[0]),
+};
+
+// ── Data layer: demo (?demo in the URL — nothing is saved) ──────────────
+function demoStore(){
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2));
+  const now = () => new Date().toISOString();
+  const t = today(), y = prevWorkday(t), y2 = prevWorkday(y);
+  const P = { id:'demo-1', project_ref:'06.14', project_name:'DEMO 2401', project_type:'standard', budget_days:4.5,
+    target_completion:null, status:'active', created_by:'Demo', created_at:now(), updated_at:now() };
+  const db = {
+    line_projects:[P],
+    line_daily:[
+      { id:uid(), project_id:P.id, work_date:y2, people_on_line:6, target_qty:14, q1:3, q2:4, q3:3, q4:4, cdt_fouls:0, cdt_downtime_mins:0, disruptions:'', entered_by:'Demo', updated_at:now() },
+      { id:uid(), project_id:P.id, work_date:y,  people_on_line:6, target_qty:16, q1:4, q2:4, q3:2, q4:3, cdt_fouls:1, cdt_downtime_mins:45, disruptions:'Waited 45 mins for revised drawing on panel E12.', entered_by:'Demo', updated_at:now() },
+      { id:uid(), project_id:P.id, work_date:t,  people_on_line:5, target_qty:16, q1:4, q2:3, q3:null, q4:null, cdt_fouls:0, cdt_downtime_mins:0, disruptions:'One operative off sick.', entered_by:'Demo', updated_at:now() },
+    ],
+    line_readiness:[{ id:uid(), project_id:P.id, entry_date:y2, cutting_list_ready:true, cut_gap_mins:90, cut_gap_reason:'Saw blade change between jobs', drawings_ready:false, panel_gap_mins:240, panel_gap_reason:'Ground floor drawings issued late morning', entered_by:'Demo', created_at:now() }],
+    line_project_end:[]
+  };
+  const c = x => x==null ? x : JSON.parse(JSON.stringify(x));
+  const wait = v => new Promise(r=>setTimeout(()=>r(c(v)),120));
+  return {
+    listProjects:   () => wait([...db.line_projects].sort((a,b)=>b.created_at.localeCompare(a.created_at))),
+    insertProject:  p => { if(db.line_projects.some(x=>x.project_ref===p.project_ref)){ const e=new Error('409: duplicate key project_ref'); e.status=409; e.body='duplicate key value violates unique constraint "line_projects_project_ref_key"'; return Promise.reject(e);} const r={id:uid(),status:'active',created_at:now(),...p}; db.line_projects.push(r); return wait(r); },
+    updateProject:  (id,p) => { const r=db.line_projects.find(x=>x.id===id); Object.assign(r,p); return wait(r); },
+    getDaily:       (pid,d) => wait(db.line_daily.find(x=>x.project_id===pid&&x.work_date===d)||null),
+    prevDaily:      (pid,d) => wait(db.line_daily.filter(x=>x.project_id===pid&&x.work_date<d).sort((a,b)=>b.work_date.localeCompare(a.work_date))[0]||null),
+    dailyForDate:   d => wait(db.line_daily.filter(x=>x.work_date===d)),
+    dailyForProject:pid => wait(db.line_daily.filter(x=>x.project_id===pid).sort((a,b)=>a.work_date.localeCompare(b.work_date))),
+    upsertDaily:    r => { let x=db.line_daily.find(z=>z.project_id===r.project_id&&z.work_date===r.work_date); if(x) Object.assign(x,r); else { x={id:uid(),...r}; db.line_daily.push(x); } return wait(x); },
+    listReadiness:  pid => wait(db.line_readiness.filter(x=>x.project_id===pid).sort((a,b)=>(b.entry_date+b.created_at).localeCompare(a.entry_date+a.created_at))),
+    insertReadiness:r => { const x={id:uid(),created_at:now(),...r}; db.line_readiness.push(x); return wait(x); },
+    getEnd:         pid => wait(db.line_project_end.find(x=>x.project_id===pid)||null),
+    upsertEnd:      e => { let x=db.line_project_end.find(z=>z.project_id===e.project_id); if(x) Object.assign(x,e); else { x={...e}; db.line_project_end.push(x); } return wait(x); },
+  };
+}
+const api = DEMO ? demoStore() : remote;
+
+// ── UI building blocks ─────────────────────────────────────────────────
+function stepper(id,label){
+  return `<div class="field"><label for="${id}">${label}</label><div class="stepper">
+    <button type="button" onclick="step('${id}',-1)" aria-label="Decrease ${label}">&minus;</button>
+    <input type="number" inputmode="numeric" min="0" step="1" id="${id}" oninput="onStep('${id}')">
+    <button type="button" onclick="step('${id}',1)" aria-label="Increase ${label}">+</button></div></div>`;
+}
+function timeInput(id,label,hint){
+  return `<div class="field"><span class="lbl">${label}</span><div class="time-in">
+    <div><input type="number" inputmode="numeric" min="0" id="${id}-h" aria-label="${label} hours"><span>hrs</span></div>
+    <div><input type="number" inputmode="numeric" min="0" max="59" id="${id}-m" aria-label="${label} minutes"><span>mins</span></div>
+  </div>${hint?`<span class="hint">${hint}</span>`:''}</div>`;
+}
+const STEPPERS = [
+  ['d-people','People on the line'],['d-target',"Today's target"],
+  ['d-q1','Q1'],['d-q2','Q2'],['d-q3','Q3'],['d-q4','Q4'],['d-cdt','CDT fouls'],
+  ['e-planing','Planing fouls'],['e-cutting','Cutting fouls'],['e-ripping','Ripping fouls'],
+  ['e-subbing','Subbing fouls'],['e-panel','Panel fouls'],['e-cdt','CDT fouls'],
+];
+const TIMES = [
+  ['d-cdt-down','CDT lead downtime (today)'],
+  ['r-cut-gap','Time between last cut and this cut'],
+  ['r-panel-gap','Time between last production line panel and this panel'],
+  ['e-machine','Machine fouls (time lost)'],
+];
+function buildInputs(){
+  STEPPERS.forEach(([id,l])=>{ document.getElementById('st-'+id).innerHTML=stepper(id,l); });
+  TIMES.forEach(([id,l,h])=>{ document.getElementById('ti-'+id).innerHTML=timeInput(id,l,h); });
+  document.querySelectorAll('.seg').forEach(seg=>{
+    seg.addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      const was=b.classList.contains('on');
+      seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      if(!was || seg.id==='seg-p-type') b.classList.add('on');
+    });
+  });
+}
+function step(id,d){ const el=document.getElementById(id); const v=Math.max(0,(Number(el.value)||0)+d); el.value=v; onStep(id); }
+function onStep(id){ if(id.startsWith('d-q')||id==='d-target') updateTotal(); }
+const val = id => numOrNull(document.getElementById(id).value);
+const setVal = (id,v) => { document.getElementById(id).value = v==null ? '' : v; };
+function getTime(id){ const h=val(id+'-h'), m=val(id+'-m'); if(h==null&&m==null) return null; return Math.round((h||0)*60+(m||0)); }
+function setTime(id,mins){ if(mins==null){ setVal(id+'-h',null); setVal(id+'-m',null); return; } setVal(id+'-h',Math.floor(mins/60)); setVal(id+'-m',mins%60); }
+function getSeg(id){ const b=document.querySelector('#'+id+' button.on'); if(!b) return null; const v=b.dataset.v; return v==='true'?true:v==='false'?false:v; }
+function setSeg(id,v){ document.querySelectorAll('#'+id+' button').forEach(b=>b.classList.toggle('on', v!=null && b.dataset.v===String(v))); }
+
+let toastTimer;
+function toast(msg,err){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.className='toast'+(err?' err':''),err?4500:2200); }
+function setSync(state,text){ const c={ok:'#3ecf8e',demo:'#f0b44c',err:'#e5574a',wait:'#888'}[state]; document.getElementById('sync-dot').style.background=c; document.getElementById('sync-text').textContent=text; }
+function friendlyError(e){
+  const b = (e && e.body) || String(e);
+  if(/project_ref/.test(b) && /duplicate|unique/i.test(b)) return 'A project with that reference already exists.';
+  if(e && (e.status===404 || /PGRST205|does not exist|schema cache/i.test(b))) return 'Database not set up yet — the setup script needs running in Supabase.';
+  if(e instanceof TypeError) return 'No connection — not saved. Check wifi and try again.';
+  return 'Could not save: '+b.slice(0,140);
+}
+async function busy(btnId, fn){
+  const b=document.getElementById(btnId); const label=b.textContent; b.disabled=true; b.textContent='Saving…';
+  try{ return await fn(); } finally{ b.disabled=false; b.textContent=label; }
+}
+
+// ── State ──────────────────────────────────────────────────────────────
+let projects = [];
+let currentId = store.get('p1log_project', null);
+let creatingNew = false;
+let page = 'today';
+const current = () => projects.find(p=>p.id===currentId) || null;
+
+async function loadProjects(){
+  try{
+    projects = await api.listProjects();
+    setSync(DEMO?'demo':'ok', DEMO?'Demo mode':'Live');
+    document.getElementById('banner-area').innerHTML = DEMO
+      ? '<div class="banner warn"><b>Demo mode.</b> Try it out freely — nothing you enter is saved.</div>' : '';
+  }catch(e){
+    console.warn(e); projects=[];
+    setSync('err','Offline');
+    document.getElementById('banner-area').innerHTML = `<div class="banner warn">${esc(friendlyError(e))}</div>`;
+  }
+  if(!current()){ const a=projects.find(p=>p.status==='active'); currentId = a ? a.id : null; }
+  renderProjectSelect();
+}
+function renderProjectSelect(){
+  const sel=document.getElementById('proj-select');
+  const act=projects.filter(p=>p.status==='active'), done=projects.filter(p=>p.status!=='active');
+  const opt=p=>`<option value="${p.id}">${esc(p.project_name)} · ${esc(p.project_ref)}</option>`;
+  sel.innerHTML = (projects.length?'':'<option value="">No projects yet</option>')
+    + (act.length?`<optgroup label="On the line">${act.map(opt).join('')}</optgroup>`:'')
+    + (done.length?`<optgroup label="Completed">${done.map(opt).join('')}</optgroup>`:'');
+  sel.value = currentId || '';
+}
+function selectProject(id){ currentId=id||null; creatingNew=false; store.set('p1log_project',currentId); refreshPage(); }
+function newProject(){ creatingNew=true; showPage('project'); }
+
+function showPage(p){
+  page=p;
+  document.querySelectorAll('.page').forEach(s=>s.classList.toggle('active', s.id==='page-'+p));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.page===p));
+  if(p!=='project') creatingNew=false;
+  history.replaceState(null,'','#'+p);
+  window.scrollTo(0,0);
+  refreshPage();
+}
+function refreshPage(){
+  if(page==='today') loadDaily();
+  else if(page==='ready') loadReadiness();
+  else if(page==='project') loadProjectPage();
+  else if(page==='live') renderLive();
+}
+
+// ── TODAY ──────────────────────────────────────────────────────────────
+function saveWho(){ store.set('p1log_who', document.getElementById('who').value.trim()); }
+const who = () => document.getElementById('who').value.trim() || null;
+
+function updateTotal(){
+  const total=['d-q1','d-q2','d-q3','d-q4'].reduce((a,id)=>a+(val(id)||0),0);
+  const target=val('d-target');
+  document.getElementById('d-total').textContent=total;
+  document.getElementById('d-total-of').textContent = target ? 'of '+target+' target' : '';
+  const pct = target ? Math.min(100, total/target*100) : 0;
+  const bar=document.getElementById('d-bar'); bar.querySelector('i').style.width=pct+'%';
+  bar.className='bar'+(target && total>=target?' green':'');
+}
+async function loadDaily(){
+  const p=current();
+  document.getElementById('today-empty').style.display = p?'none':'block';
+  document.getElementById('today-form').style.display = p?'block':'none';
+  if(!p) return;
+  const dEl=document.getElementById('d-date'); if(!dEl.value) dEl.value=today();
+  const d=dEl.value;
+  let rec=null, prev=null;
+  try{ [rec,prev] = await Promise.all([api.getDaily(p.id,d), api.prevDaily(p.id,d)]); }
+  catch(e){ console.warn(e); }
+  if(current()!==p || dEl.value!==d) return; // user moved on while loading
+  const y=document.getElementById('d-yesterday');
+  y.innerHTML = prev
+    ? `<div>Yesterday's number<small>Last recorded day · ${fmtDay(prev.work_date)}</small></div><b>${sumQ(prev)}</b>`
+    : `<div>Yesterday's number<small>First day recorded for this project</small></div><b>—</b>`;
+  setVal('d-people', rec ? rec.people_on_line : (prev ? prev.people_on_line : null));
+  setVal('d-target', rec?.target_qty);
+  ['q1','q2','q3','q4'].forEach(q=>setVal('d-'+q, rec?.[q]));
+  setVal('d-cdt', rec?.cdt_fouls);
+  setTime('d-cdt-down', rec?.cdt_downtime_mins ?? null);
+  document.getElementById('d-disrupt').value = rec?.disruptions || '';
+  document.getElementById('d-meta').textContent = rec
+    ? `Last saved ${fmtTime(rec.updated_at)}${rec.entered_by?' by '+rec.entered_by:''}`
+    : (prev && !rec ? 'People on the line copied from last record — change if needed.' : '');
+  updateTotal();
+}
+async function saveDaily(){
+  const p=current(); if(!p) return;
+  const qs=['q1','q2','q3','q4'].map(q=>val('d-'+q));
+  if(qs.some(v=>v!=null && v>60) && !confirm('One quarter has more than 60 panels. Is that right?')) return;
+  const rec = {
+    project_id:p.id, work_date:document.getElementById('d-date').value || today(),
+    people_on_line:val('d-people'), target_qty:val('d-target'),
+    q1:qs[0], q2:qs[1], q3:qs[2], q4:qs[3],
+    cdt_fouls:val('d-cdt'), cdt_downtime_mins:getTime('d-cdt-down'),
+    disruptions:document.getElementById('d-disrupt').value.trim() || null,
+    entered_by:who(), updated_at:new Date().toISOString()
+  };
+  await busy('d-save', async()=>{
+    try{ const r=await api.upsertDaily(rec); toast('Daily record saved'); document.getElementById('d-meta').textContent=`Last saved ${fmtTime(r?.updated_at||rec.updated_at)}${rec.entered_by?' by '+rec.entered_by:''}`; }
+    catch(e){ console.warn(e); toast(friendlyError(e),true); }
+  });
+}
+
+// ── READINESS ──────────────────────────────────────────────────────────
+function clearReadinessForm(){
+  document.getElementById('r-date').value=today();
+  setSeg('seg-r-cut',null); setSeg('seg-r-draw',null);
+  setTime('r-cut-gap',null); setTime('r-panel-gap',null);
+  document.getElementById('r-cut-reason').value=''; document.getElementById('r-panel-reason').value='';
+}
+async function loadReadiness(){
+  const p=current();
+  document.getElementById('ready-empty').style.display = p?'none':'block';
+  document.getElementById('ready-form').style.display = p?'block':'none';
+  if(!p) return;
+  if(!document.getElementById('r-date').value) document.getElementById('r-date').value=today();
+  const list=document.getElementById('r-list');
+  let rows=[]; try{ rows=await api.listReadiness(p.id); }catch(e){ console.warn(e); }
+  if(current()!==p) return;
+  const yn = v => v==null ? '<span class="pill type">—</span>' : `<span class="pill ${v?'yes':'no'}">${v?'Yes':'No'}</span>`;
+  list.innerHTML = rows.length ? rows.map(r=>`<div class="log-item">
+      <div class="log-head"><span>${fmtDay(r.entry_date)}</span><span>${esc(r.entered_by||'')}</span></div>
+      <div class="log-line">Cutting list ready ${yn(r.cutting_list_ready)} · gap <b>${fmtMins(r.cut_gap_mins)}</b></div>
+      ${r.cut_gap_reason?`<div class="note"><span>Reason for cutting gap</span>${esc(r.cut_gap_reason)}</div>`:''}
+      <div class="log-line" style="margin-top:8px">Panel drawings ready ${yn(r.drawings_ready)} · gap <b>${fmtMins(r.panel_gap_mins)}</b></div>
+      ${r.panel_gap_reason?`<div class="note"><span>Reason for panel gap</span>${esc(r.panel_gap_reason)}</div>`:''}
+    </div>`).join('') : '<div class="hint">No readiness entries yet.</div>';
+}
+async function saveReadiness(){
+  const p=current(); if(!p) return;
+  const r = {
+    project_id:p.id, entry_date:document.getElementById('r-date').value || today(),
+    cutting_list_ready:getSeg('seg-r-cut'), cut_gap_mins:getTime('r-cut-gap'),
+    cut_gap_reason:document.getElementById('r-cut-reason').value.trim() || null,
+    drawings_ready:getSeg('seg-r-draw'), panel_gap_mins:getTime('r-panel-gap'),
+    panel_gap_reason:document.getElementById('r-panel-reason').value.trim() || null,
+    entered_by:who() || store.get('p1log_who',null)
+  };
+  if(r.cutting_list_ready==null && r.drawings_ready==null && r.cut_gap_mins==null && r.panel_gap_mins==null && !r.cut_gap_reason && !r.panel_gap_reason){
+    toast('Nothing entered yet',true); return;
+  }
+  await busy('r-save', async()=>{
+    try{ await api.insertReadiness(r); toast('Readiness entry saved'); clearReadinessForm(); loadReadiness(); }
+    catch(e){ console.warn(e); toast(friendlyError(e),true); }
+  });
+}
+
+// ── PROJECT ────────────────────────────────────────────────────────────
+function updateTargetDay(){
+  const v=document.getElementById('p-target').value;
+  document.getElementById('p-target-day').textContent = v ? fmtDateTime(v) : '';
+}
+async function loadProjectPage(){
+  const p = creatingNew ? null : current();
+  document.getElementById('p-title').textContent = p ? p.project_name : 'New project';
+  document.getElementById('p-sub').innerHTML = p
+    ? `${esc(p.project_ref)} · <span class="pill type">${p.project_type==='ifb'?'IFB':'Standard'}</span> ${p.status!=='active'?'<span class="pill done">Complete</span>':''}`
+    : 'Start-up details, entered at the start of the project.';
+  setVal('p-name', p?.project_name); setVal('p-ref', p?.project_ref);
+  setSeg('seg-p-type', p ? p.project_type : 'standard');
+  setVal('p-budget', p?.budget_days);
+  document.getElementById('p-target').value = toLocalInput(p?.target_completion); updateTargetDay();
+  document.getElementById('p-save').textContent = p ? 'Save changes' : 'Start project';
+  document.getElementById('p-existing').style.display = p ? 'block' : 'none';
+  if(!p) return;
+
+  let days=[], end=null;
+  try{ [days,end] = await Promise.all([api.dailyForProject(p.id), api.getEnd(p.id)]); }catch(e){ console.warn(e); }
+  if(current()!==p || creatingNew) return;
+  const total=days.reduce((a,r)=>a+sumQ(r),0);
+  const ppl=days.filter(r=>r.people_on_line), avgPpl= ppl.length ? ppl.reduce((a,r)=>a+r.people_on_line,0)/ppl.length : null;
+  const cdtDaily=days.reduce((a,r)=>a+(r.cdt_fouls||0),0);
+  const cdtDown=days.reduce((a,r)=>a+(r.cdt_downtime_mins||0),0);
+  document.getElementById('p-progress').innerHTML = [
+    ['Days recorded', days.length + (p.budget_days!=null?` <small style="font-size:13px;color:var(--text-2);font-family:'DM Sans',sans-serif">of ${p.budget_days} budget</small>`:'')],
+    ['Panels made', total],
+    ['Avg panels / day', days.length ? (total/days.length).toFixed(1) : '—'],
+    ['Avg people on line', avgPpl!=null ? avgPpl.toFixed(1) : '—'],
+    ['CDT fouls (daily total)', cdtDaily],
+    ['CDT lead downtime', fmtMins(cdtDown)],
+  ].map(([l,v])=>`<div class="kpi"><span>${l}</span><b>${v}</b></div>`).join('');
+
+  const map={planing:'planing_fouls',cutting:'cutting_fouls',ripping:'ripping_fouls',subbing:'subbing_fouls',panel:'panel_fouls',cdt:'cdt_fouls'};
+  Object.entries(map).forEach(([k,f])=>setVal('e-'+k, end?.[f]));
+  setTime('e-machine', end?.machine_fouls_mins ?? null);
+  setSeg('seg-e-internal', end ? end.internal_panels_in_line_time : null);
+  document.getElementById('e-cdt-hint').textContent = `CDT fouls logged on daily records so far: ${cdtDaily}`;
+  document.getElementById('e-save').textContent = p.status==='active' ? 'Save & mark project complete' : 'Save end-of-project changes';
+  document.getElementById('e-meta').textContent = end ? `Completed ${fmtDateTime(end.completed_at)}${end.entered_by?' by '+end.entered_by:''}` : '';
+}
+async function saveProject(){
+  const editing = creatingNew ? null : current();
+  const name=document.getElementById('p-name').value.trim(), ref=document.getElementById('p-ref').value.trim();
+  const type=getSeg('seg-p-type'), budget=val('p-budget'), tgt=document.getElementById('p-target').value;
+  if(!name || !ref){ toast('Project name and reference are needed',true); return; }
+  if(budget!=null && (budget<0 || budget>60)){ toast('Budgeted days looks wrong — check it',true); return; }
+  const rec = { project_name:name, project_ref:ref, project_type:type||'standard', budget_days:budget,
+    target_completion: tgt ? new Date(tgt).toISOString() : null, updated_at:new Date().toISOString() };
+  await busy('p-save', async()=>{
+    try{
+      if(editing){ await api.updateProject(editing.id, rec); toast('Project updated'); }
+      else { const r=await api.insertProject({...rec, created_by:who()||store.get('p1log_who',null)}); currentId=r.id; store.set('p1log_project',currentId); creatingNew=false; toast('Project started'); }
+      await loadProjects(); loadProjectPage();
+    }catch(e){ console.warn(e); toast(friendlyError(e),true); }
+  });
+}
+async function saveEnd(){
+  const p=current(); if(!p) return;
+  const e = { project_id:p.id,
+    planing_fouls:val('e-planing'), cutting_fouls:val('e-cutting'), ripping_fouls:val('e-ripping'),
+    subbing_fouls:val('e-subbing'), panel_fouls:val('e-panel'), cdt_fouls:val('e-cdt'),
+    machine_fouls_mins:getTime('e-machine'), internal_panels_in_line_time:getSeg('seg-e-internal'),
+    entered_by:who() || store.get('p1log_who',null) };
+  if(p.status==='active' && !confirm(`Mark ${p.project_name} as complete? It will move to the Completed list.`)) return;
+  await busy('e-save', async()=>{
+    try{
+      const prev = await api.getEnd(p.id);
+      if(!prev) e.completed_at = new Date().toISOString();
+      await api.upsertEnd(e);
+      if(p.status==='active') await api.updateProject(p.id,{status:'complete',updated_at:new Date().toISOString()});
+      toast('End of project saved'); await loadProjects(); loadProjectPage();
+    }catch(err){ console.warn(err); toast(friendlyError(err),true); }
+  });
+}
+
+// ── LIVE (line managers) ───────────────────────────────────────────────
+let liveTimer=null;
+function setLiveToday(){ document.getElementById('l-date').value=today(); renderLive(); }
+function paceStatus(rec){
+  const t=rec?.target_qty, n=quartersDone(rec);
+  if(!rec || !t || !n) return ['grey','No target yet'];
+  const expected=t*n/4, made=sumQ(rec);
+  if(made>=expected) return ['green','On target'];
+  if(made>=expected*0.85) return ['amber','Slightly behind'];
+  return ['red','Behind target'];
+}
+async function renderLive(){
+  clearTimeout(liveTimer);
+  const dEl=document.getElementById('l-date'); if(!dEl.value) dEl.value=today();
+  const d=dEl.value, box=document.getElementById('l-content');
+  try{
+    projects = await api.listProjects(); renderProjectSelect();
+    const recs = await api.dailyForDate(d);
+    const ids = new Set(recs.map(r=>r.project_id));
+    if(d===today()) projects.filter(p=>p.status==='active').forEach(p=>ids.add(p.id));
+    const list = projects.filter(p=>ids.has(p.id));
+    const cards = await Promise.all(list.map(async p=>{
+      const rec = recs.find(r=>r.project_id===p.id) || null;
+      const [prev, days, ready] = await Promise.all([api.prevDaily(p.id,d), api.dailyForProject(p.id), api.listReadiness(p.id)]);
+      return liveCard(p, rec, prev, days.filter(r=>r.work_date<=d), ready.find(r=>r.entry_date<=d));
+    }));
+    if(page!=='live' || dEl.value!==d) return;
+    box.innerHTML = cards.length ? cards.join('') : `<div class="card empty"><b>Nothing recorded for ${fmtDay(d)}</b>No daily records on this day.</div>`;
+    document.getElementById('l-upd').innerHTML = d===today()
+      ? `<i></i>Updates every 30 seconds · last checked ${fmtTime(new Date().toISOString())}`
+      : `Showing ${fmtDay(d)}`;
+    if(!DEMO) setSync('ok','Live');
+  }catch(e){
+    console.warn(e); setSync('err','Offline');
+    box.innerHTML = `<div class="banner warn">${esc(friendlyError(e))}</div>`;
+  }
+  if(page==='live' && d===today()) liveTimer=setTimeout(renderLive, LIVE_REFRESH_MS);
+}
+function liveCard(p, rec, prev, days, ready){
+  const made=sumQ(rec), t=rec?.target_qty, [cls,label]=paceStatus(rec);
+  const qT = t ? t/4 : null;
+  const maxQ = Math.max(qT||0, ...['q1','q2','q3','q4'].map(q=>rec?.[q]||0), 1);
+  const qbars = ['q1','q2','q3','q4'].map(q=>{
+    const v=rec?.[q];
+    return `<div class="qbar"><div class="col">${qT?`<em style="bottom:${qT/maxQ*100}%"></em>`:''}<i style="height:${(v||0)/maxQ*100}%"></i></div><b>${v==null?'—':v}</b>${q.toUpperCase()}</div>`;
+  }).join('');
+  const total=days.reduce((a,r)=>a+sumQ(r),0);
+  const dayN=days.length;
+  const over = p.budget_days!=null && dayN>p.budget_days;
+  const ppl=rec?.people_on_line;
+  const yn = v => v==null ? '—' : `<span class="pill ${v?'yes':'no'}">${v?'Yes':'No'}</span>`;
+  return `<div class="card">
+    <div class="live-head"><div><div class="live-name">${esc(p.project_name)}</div><div class="live-ref">${esc(p.project_ref)} · <span class="pill type">${p.project_type==='ifb'?'IFB':'Standard'}</span></div></div>
+      <span class="status ${cls}">${label}</span></div>
+    ${rec ? `
+    <div class="big"><b>${made}</b><span>${t?'of '+t+' panels target':'panels made'}</span></div>
+    <div class="bar ${cls==='grey'?'':cls}"><i style="width:${t?Math.min(100,made/t*100):0}%"></i></div>
+    <div class="qbars">${qbars}</div>
+    ${qT?`<div class="hint" style="margin-top:6px">Dashed line = quarter target (${+(qT.toFixed(1))} panels)</div>`:''}
+    <div class="kpis">
+      <div class="kpi"><span>People on line</span><b>${ppl ?? '—'}</b></div>
+      <div class="kpi"><span>Panels per person</span><b>${ppl ? (made/ppl).toFixed(1) : '—'}</b></div>
+      <div class="kpi"><span>Yesterday's number</span><b>${prev?sumQ(prev):'—'}</b></div>
+      <div class="kpi"><span>CDT fouls</span><b>${rec.cdt_fouls ?? '—'}</b></div>
+      <div class="kpi"><span>CDT lead downtime</span><b>${fmtMins(rec.cdt_downtime_mins)}</b></div>
+      <div class="kpi"><span>Project day</span><b style="${over?'color:var(--red)':''}">${dayN}${p.budget_days!=null?' / '+p.budget_days:''}</b></div>
+    </div>
+    ${rec.disruptions?`<div class="note"><span>Other disruptions</span>${esc(rec.disruptions)}</div>`:''}
+    ` : `<div class="empty" style="padding:16px 0"><b>No record yet today</b>Waiting for the supervisor's first entry.</div>`}
+    ${ready?`<div class="note"><span>Readiness (${fmtDay(ready.entry_date)})</span>Cutting list ${yn(ready.cutting_list_ready)} &nbsp; Drawings ${yn(ready.drawings_ready)}</div>`:''}
+    <div class="meta">Panels to date: ${total}${p.target_completion?' · Target completion '+fmtDateTime(p.target_completion):''}${rec?.updated_at?' · Updated '+fmtTime(rec.updated_at)+(rec.entered_by?' by '+esc(rec.entered_by):''):''}</div>
+  </div>`;
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && page==='live') renderLive(); });
+
+// ── Start ──────────────────────────────────────────────────────────────
+(async function init(){
+  buildInputs();
+  document.getElementById('who').value = store.get('p1log_who','');
+  document.getElementById('p-target').addEventListener('input', updateTargetDay);
+  document.getElementById('d-date').value = today();
+  document.getElementById('r-date').value = today();
+  if(DEMO) setSync('demo','Demo mode'); else setSync('wait','Connecting…');
+  await loadProjects();
+  const h=location.hash.slice(1);
+  showPage(['today','ready','project','live'].includes(h) ? h : 'today');
+})();
+</script>
+</body>
+</html>
